@@ -2,20 +2,20 @@ import socket
 
 # Standard Port festlegen
 port = 7470
-
 clients = []
 
-#Auf Client Anfragen warten
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', port))  # Lauscht auf alle IPs im lokalen Netz
+def waitConnection():
+    #Auf Client Anfragen warten
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('', port))  # Lauscht auf alle IPs im lokalen Netz
 
-print("Server wartet auf Broadcast-Anfragen...")
+    print("Server wartet auf Broadcast-Anfragen...")
 
-while True:
-    data, addr = sock.recvfrom(1024)
-    if data.decode() == "DISCOVER_TRIVIA_GAME":
-        print(f"Anfrage von {addr}, sende Antwort...")
-        sock.sendto("SERVER_ACK".encode(), addr)
+    while True:
+        data, addr = sock.recvfrom(1024)
+        if data.decode() == "DISCOVER_TRIVIA_GAME":
+            print(f"Anfrage von {addr}, sende Antwort...")
+            sock.sendto("SERVER_ACK".encode(), addr)
 
 
 

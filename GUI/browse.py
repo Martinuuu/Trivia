@@ -2,20 +2,25 @@ import tkinter as tk
 from tkinter import messagebox
 from clientnetwork import checkServer
 
-class TriviaClientBrowse:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Trivia Spiel - Server finden")
-        self.root.geometry("400x300")
+class TriviaClientBrowse(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
 
-        self.label = tk.Label(root, text="Gefundene Server:", font=("Arial", 12))
-        self.label.pack(pady=10)
+        # Zurück-Button
+        back = tk.Button(self, text="←", command=parent.show_start, width=2, height=1, font=("Arial", 10))
+        back.place(x=10, y=10)  # Fixe Position oben links
 
-        self.server_listbox = tk.Listbox(root, font=("Arial", 10))
+        # Label
+        label = tk.Label(self, text="Gefundene Server:", font=("Arial", 12))
+        label.pack(pady=10)
+
+        # Listbox
+        self.server_listbox = tk.Listbox(self, font=("Arial", 10))
         self.server_listbox.pack(fill=tk.BOTH, expand=True, padx=20)
 
-        self.refresh_button = tk.Button(root, text="Nach Servern suchen", command=self.suche_server)
-        self.refresh_button.pack(pady=10)
+        # Refresh-Button
+        refresh_button = tk.Button(self, text="Nach Servern suchen", command=self.suche_server)
+        refresh_button.pack(pady=10)
 
     def suche_server(self):
         self.server_listbox.delete(0, tk.END)
@@ -28,8 +33,3 @@ class TriviaClientBrowse:
                 messagebox.showinfo("Kein Server gefunden", "Es wurde kein Spielserver gefunden.")
         except Exception as e:
             messagebox.showerror("Fehler", str(e))
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = TriviaClientBrowse(root)
-    root.mainloop()
