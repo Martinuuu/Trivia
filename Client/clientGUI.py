@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from client import checkServer
+from Client.clientnetwork import checkServer
 
 class TriviaClientGUI:
     def __init__(self, root):
