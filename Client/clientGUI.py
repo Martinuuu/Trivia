@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from client import checkServer  # <-- deine eigene Funktion
+from client import checkServer
 
 class TriviaClientGUI:
     def __init__(self, root):
@@ -20,8 +20,8 @@ class TriviaClientGUI:
     def suche_server(self):
         self.server_listbox.delete(0, tk.END)
         try:
-            server_liste = checkServer()  # <- Rückgabe: Liste von Strings
-            if server_liste:
+            server_liste = checkServer()
+            if server_liste is not None:
                 for eintrag in server_liste:
                     self.server_listbox.insert(tk.END, eintrag)
             else:
