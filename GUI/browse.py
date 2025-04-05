@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from clientnetwork import checkServer
+from clientnetwork import checkServer, connectToServer
 
 class TriviaClientBrowse(tk.Frame):
     def __init__(self, parent):
@@ -22,6 +22,9 @@ class TriviaClientBrowse(tk.Frame):
         refresh_button = tk.Button(self, text="Nach Servern suchen", command=self.suche_server)
         refresh_button.pack(pady=10)
 
+        join_button = tk.Button(self, text="Nach Servern suchen", command=self.join_server)
+        join_button.pack()
+
     def suche_server(self):
         self.server_listbox.delete(0, tk.END)
         try:
@@ -33,3 +36,7 @@ class TriviaClientBrowse(tk.Frame):
                 messagebox.showinfo("Kein Server gefunden", "Es wurde kein Spielserver gefunden.")
         except Exception as e:
             messagebox.showerror("Fehler", str(e))
+
+    def join_server(self):
+        connectToServer(self.server_listbox.get(self.server_listbox.curselection()[0]).split(":")[-1].strip())
+

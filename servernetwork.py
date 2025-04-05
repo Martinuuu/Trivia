@@ -1,22 +1,28 @@
 import socket 
 
-# Standard Port festlegen
-port = 7470
-clients = []
 
+class Server():
+    def __init__(self, game_name, game_category):
+        self.port = 7870
+        self.clients = []
+        self.game_name = game_name
+        self.game_category = game_category
+    def waitConnection(self):
+        #Auf Client Anfragen warten
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('', self.port))  # Lauscht auf alle IPs im lokalen Netz
 
-
-def waitConnection():
-    #Auf Client Anfragen warten
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('', port))  # Lauscht auf alle IPs im lokalen Netz
-
-    print("Server wartet auf Broadcast-Anfragen...")
-    while True:
-        data, addr = sock.recvfrom(1024)
-        if data.decode() == "DISCOVER_GAME":
-            print(f"Anfrage von {addr}, sende Antwort...")
-            sock.sendto("SERVER_ACK".encode(), addr)
+        print("Server wartet auf Broadcast-Anfragen...")
+        while True:
+            data, addr = sock.recvfrom(1024)
+            if data.decode() == "DISCOVER_GAME":
+                print(f"Anfrage von {addr}, sende Antwort...")
+                sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category}".encode(), addr)
+            
+            if data.decode() == "CONNECT_GAME":
+                print(f"Connect von {addr}, sende Antwort...")
+                self.clients.append(addr)
+                sock.sendto("CONNECT_ACK".encode(), addr)
 
 
 

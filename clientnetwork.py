@@ -1,7 +1,7 @@
 import socket
 
 # Erfragen von Port und Host des Servers (der muss zuerst gestartet werden!)
-port = 7470
+port = 7870
 
 
 def checkServer():
@@ -17,12 +17,22 @@ def checkServer():
 
     try:
         data, addr = sock.recvfrom(1024)
-        print(f"Antwort von Server: {data.decode()} von {addr}")
-        if data.decode() == "SERVER_ACK":
-            server_list.append(addr)
+        data = data.decode().split(";")
+        print(f"Antwort von Server: {data[0]} von {addr}")
+        if data[0] == "DISCOVER_ACK":
+            server_list.append(f"{data[1]} - {data[2]}: {addr[0]}")
     except socket.timeout:
         print("Kein Server gefunden.")
     return server_list
+
+def connectToServer(adress):
+    sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
+    sock.sendto("CONNECT_GAME".encode(),(adress,port))
+
+    data, addr = sock.recvfrom(1024)
+    if data.decode() == "CONNECT_ACK":
+            print("Client Connected")
+
 
 # host = input("Host:")
 # # Socket erzeugen

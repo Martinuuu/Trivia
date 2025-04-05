@@ -1,6 +1,6 @@
 import tkinter as tk
 import threading
-from servernetwork import waitConnection
+from servernetwork import Server
 
 
 class TriviaServerWait(tk.Frame):
@@ -15,11 +15,14 @@ class TriviaServerWait(tk.Frame):
         self.server_listbox = tk.Listbox(self, font=("Arial", 10))
         self.server_listbox.pack(fill=tk.X, expand=True, padx=20)
 
+        self.game_server = Server(game_name, game_categorie)
+
         threading.Thread(target=self.wait, daemon=True).start()
 
 
+
     def wait(self):
-        waitConnection()
+        self.game_server.waitConnection()
         
         
 
