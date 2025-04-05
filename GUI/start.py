@@ -1,11 +1,15 @@
 import tkinter as tk
 from tkinter import messagebox
+from clientnetwork import checkServer
 
-class TriviaClientGUI:
+class TriviaClient:
     def __init__(self, root):
         self.root = root
-        self.root.title("Trivia Spiel - Server erstellen")
+        self.root.title("Trivia Spiel")
         self.root.geometry("400x300")
+
+        self.create_server = tk.Button(root, text="Server Erstellen")
+        self.create_server = tk.Button(root, text="Server Erstellen")
 
         self.label = tk.Label(root, text="Gefundene Server:", font=("Arial", 12))
         self.label.pack(pady=10)
@@ -30,5 +34,5 @@ class TriviaClientGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = TriviaClientGUI(root)
+    app = TriviaClient(root)
     root.mainloop()

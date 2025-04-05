@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
-from Client.clientnetwork import checkServer
+from clientnetwork import checkServer
 
-class TriviaClientGUI:
+class TriviaClientBrowse:
     def __init__(self, root):
         self.root = root
         self.root.title("Trivia Spiel - Server finden")
@@ -31,5 +31,5 @@ class TriviaClientGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = TriviaClientGUI(root)
+    app = TriviaClientBrowse(root)
     root.mainloop()
