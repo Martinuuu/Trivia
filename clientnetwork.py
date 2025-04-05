@@ -31,7 +31,7 @@ def connectToServer(adress):
 
     data, addr = sock.recvfrom(1024)
     if data.decode() == "CONNECT_ACK":
-            print("Client Connected")
+        print("Client Connected")
 
 
 # host = input("Host:")
