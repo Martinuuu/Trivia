@@ -2,6 +2,7 @@ import socket
 
 # Erfragen von Port und Host des Servers (der muss zuerst gestartet werden!)
 port = 7470
+server_list = []
 
 def checkServer():
     broadcast_address = '<broadcast>'
@@ -11,13 +12,16 @@ def checkServer():
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
 
     # Broadcast senden
-    sock.sendto("DISCOVER_SERVER".encode(), (broadcast_address, port))
+    sock.sendto("DISCOVER_TRIVIA_GAME".encode(), (broadcast_address, port))
 
     try:
         data, addr = sock.recvfrom(1024)
         print(f"Antwort von Server: {data.decode()} von {addr}")
+        if data.decode() == "SERVER_ACK":
+            server_list.append(addr)
     except socket.timeout:
         print("Kein Server gefunden.")
+    print(server_list)
 
 checkServer()
 

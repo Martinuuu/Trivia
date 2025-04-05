@@ -13,7 +13,7 @@ print("Server wartet auf Broadcast-Anfragen...")
 
 while True:
     data, addr = sock.recvfrom(1024)
-    if data.decode() == "DISCOVER_SERVER":
+    if data.decode() == "DISCOVER_TRIVIA_GAME":
         print(f"Anfrage von {addr}, sende Antwort...")
         sock.sendto("SERVER_ACK".encode(), addr)
 
