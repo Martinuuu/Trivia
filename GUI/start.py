@@ -7,7 +7,7 @@ class TriviaClient(tk.Frame):
         self.root.title("Trivia Spiel")
         self.root.geometry("400x300")
 
-        self.create_server = tk.Button(self, text="Einen Spielserver erstellen", command=parent.show_serverbrowse)
+        self.create_server = tk.Button(self, text="Einen Spielserver erstellen", command=parent.show_servercreate)
         self.create_server.pack(pady=10)
 
         self.browse_server = tk.Button(self, text="Einen Spielserver suchen", command=parent.show_serverbrowse)

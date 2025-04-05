@@ -13,7 +13,7 @@ def checkServer():
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
 
     # Broadcast senden
-    sock.sendto("DISCOVER_TRIVIA_GAME".encode(), (broadcast_address, port))
+    sock.sendto("DISCOVER_GAME".encode(), (broadcast_address, port))
 
     try:
         data, addr = sock.recvfrom(1024)
