@@ -2,12 +2,13 @@ import socket
 
 # Erfragen von Port und Host des Servers (der muss zuerst gestartet werden!)
 port = 7470
-server_list = []
+
 
 def checkServer():
+    server_list = []
     broadcast_address = '<broadcast>'
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # INTERNET,UDP
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
 
@@ -21,13 +22,11 @@ def checkServer():
             server_list.append(addr)
     except socket.timeout:
         print("Kein Server gefunden.")
-    print(server_list)
-
-checkServer()
+    return server_list
 
 # host = input("Host:")
 # # Socket erzeugen
-# UDPsocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) # INTERNET,UDP
+# UDPsocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
 # nachricht=""
 # while nachricht != "shutdown":
 #   nachricht=input("Nachricht:")
