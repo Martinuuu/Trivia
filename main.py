@@ -3,6 +3,7 @@ from GUI.start import TriviaClient
 from GUI.browse import TriviaClientBrowse
 from GUI.create import TriviaServerCreate
 from GUI.serverwait import TriviaServerWait
+from GUI.game import TriviaGame
 
 class App(tk.Tk):
     def __init__(self):
@@ -31,6 +32,9 @@ class App(tk.Tk):
 
     def show_serverwait(self, game_name, game_category):
         self.switch_frame(TriviaServerWait, game_name, game_category)
+    
+    def show_game(self, server=None):
+        self.switch_frame(TriviaGame, server)
 
 
 if __name__ == "__main__":

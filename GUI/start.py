@@ -3,9 +3,9 @@ import tkinter as tk
 class TriviaClient(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
-        self.root = parent
-        self.root.title("Trivia Spiel")
-        self.root.geometry("400x300")
+        self.parent = parent
+        self.parent.title("Trivia Spiel")
+        self.parent.geometry("400x300")
 
         self.create_server = tk.Button(self, text="Einen Spielserver erstellen", command=parent.show_servercreate)
         self.create_server.pack(pady=10)

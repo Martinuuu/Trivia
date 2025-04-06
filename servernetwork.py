@@ -2,7 +2,7 @@ import socket
 import threading
 
 class Server():
-    def __init__(self, game_name, game_category, client_callback=None):
+    def __init__(self, game_name, game_category, client_callback):
         self.port = 7870
         self.clients = []
         self.game_name = game_name
