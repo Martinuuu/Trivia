@@ -2,12 +2,13 @@ import socket
 import threading
 
 class Server():
-    def __init__(self, game_name, game_category):
+    def __init__(self, game_name, game_category, client_callback=None):
         self.port = 7870
         self.clients = []
         self.game_name = game_name
         self.game_category = game_category
         self.stop_event = threading.Event()  # Event zum Stoppen der Schleife
+        self.client_callback = client_callback  # Callback-Funktion für neue Clients
     
     def waitConnection(self):
         # Auf Client-Anfragen warten
@@ -28,6 +29,7 @@ class Server():
                     print(f"Connect von {addr}, sende Antwort...")
                     self.clients.append(addr)
                     sock.sendto("CONNECT_ACK".encode(), addr)
+                    self.client_callback(addr)
 
             except socket.timeout:
                 # Timeout erreicht, weiter prüfen, ob das Stop-Event gesetzt wurde
