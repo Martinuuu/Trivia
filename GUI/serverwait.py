@@ -9,6 +9,10 @@ class TriviaServerWait(tk.Frame):
         self.parent = parent
         parent.title(f"{game_name} - {game_categorie}")
 
+        # Zurück-Button
+        back = tk.Button(self, text="←", command=self.back, width=2, height=1, font=("Arial", 10))
+        back.place(x=10, y=10)  # Fixe Position oben links
+
         self.label = tk.Label(self, text="Verbundene Spieler:")
         self.label.pack()
         
@@ -17,19 +21,22 @@ class TriviaServerWait(tk.Frame):
 
         self.game_server = Server(game_name, game_categorie)
 
-        threading.Thread(target=self.wait, daemon=True).start()
+        self.stop_event = threading.Event()
+        self.waitThread = threading.Thread(target=self.game_server.waitConnection, daemon=True)
+        self.waitThread.start()
+
+    def back(self):
+        print("Stopping Wait")
+        self.game_server.stop_event.set()  # Stop-Event setzen, um die Schleife zu beenden
+        self.waitThread.join()  # Warten, bis der Thread beendet ist
+        self.parent.show_servercreate()  # Zurück zum Create-Fenster
 
 
 
-    def wait(self):
-        self.game_server.waitConnection()
-        
-        
 
 
-        
-
-       
 
 
-    
+
+
+

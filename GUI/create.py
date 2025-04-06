@@ -7,7 +7,10 @@ class TriviaServerCreate(tk.Frame):
         super().__init__(parent)    
         self.parent = parent
 
-        # Widgets an `self` binden
+        # Zurück-Button
+        back = tk.Button(self, text="←", command=parent.show_start, width=2, height=1, font=("Arial", 10))
+        back.place(x=10, y=10)  # Fixe Position oben links
+        
         name_label = tk.Label(self, text="Servername:")
         name_label.pack()
 
@@ -18,8 +21,10 @@ class TriviaServerCreate(tk.Frame):
         self.options.set("Lade Kategorien...")
         self.options_menu = tk.OptionMenu(self, self.options, "Lade Kategorien...")
         self.options_menu.pack()
+        self.options_menu.config(state=tk.DISABLED)
 
-        tk.Button(self, text="Fertig", command=self.submit).pack()
+        self.submit_button = tk.Button(self, text="Fertig", command=self.submit)
+        self.submit_button.pack()
 
         # Kategorien im Hintergrund laden
         threading.Thread(target=self.load_categories, daemon=True).start()
@@ -38,6 +43,7 @@ class TriviaServerCreate(tk.Frame):
         self.options.set("Kategorie auswählen")
         for categorie in categories:
             menu.add_command(label=categorie[1], command=lambda value=categorie[1]: self.options.set(value))
+        self.options_menu.config(state=tk.NORMAL)
 
 
 
