@@ -14,3 +14,33 @@ def get_categories():
         print(f"Fehler beim Abrufen der Kategorien: {response.status_code}")
     
     return categories
+
+
+
+class Api():
+    def __init__(self):
+        self.session_token = self.get_session_token()
+
+    def get_session_token(self):
+        token = None
+        response = requests.get("https://opentdb.com/api_token.php?command=request")
+        if response.status_code == 200:
+            data = json.loads(response.content)  
+            if data["response_code"] == 0:
+                token = data["token"]
+        else:
+            print(f"Fehler beim Abrufen des Tokens: {response.status_code}")
+    
+        return token
+    
+    def get_trivia(self, category):
+        questions = []
+        response = requests.get(f"https://opentdb.com/api.php?amount=5&type=multiple&category={category}&token={self.session_token}")
+        if response.status_code == 200:
+            data = json.loads(response.content)  
+            for item in data["trivia_categories"]:
+                questions.append((item["id"], item["name"]))
+        else:
+            print(f"Fehler beim Abrufen der Fragen: {response.status_code}")
+    
+        return questions
