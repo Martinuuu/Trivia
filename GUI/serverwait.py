@@ -9,7 +9,7 @@ class TriviaServerWait(tk.Frame):
         self.parent = parent
         self.parent.geometry("550x300")
         parent.title(f"{game_name} - {game_category}")
-        self.game_server = Server(game_name, game_category, client_callback=self.add_client)
+        self.game_server = Server(game_name, game_category, client_callback=self.callback_handler)
 
         # Zurück-Button
         back = tk.Button(self, text="←", command=self.back, width=2, height=1, font=("Arial", 10))
@@ -28,10 +28,22 @@ class TriviaServerWait(tk.Frame):
         self.waitThread = threading.Thread(target=self.game_server.waitConnection, daemon=True)
         self.waitThread.start()
 
+    def callback_handler(self, command, *args):
+        if command == "CONNECT_GAME":
+            self.add_client(args[0])
+        elif command == "LEAVE_GAME":
+            self.remove_client(args[0])
+
     def add_client(self, client_address):
         self.server_listbox.insert(tk.END, f"Client: {client_address[0]}:{client_address[1]}")
 
+    def remove_client(self, client_address):
+        target = f"Client: {client_address[0]}:{client_address[1]}"
+        index = self.server_listbox.get(0, tk.END).index(target)
+        self.server_listbox.delete(index)
+
     def start_game(self):
+        self.game_server.startGame()
         self.parent.show_game(self.game_server)
 
     def back(self):

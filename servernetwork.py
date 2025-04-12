@@ -29,7 +29,25 @@ class Server():
                     print(f"Connect von {addr}, sende Antwort...")
                     self.clients.append(addr)
                     sock.sendto("CONNECT_ACK".encode(), addr)
-                    self.client_callback(addr)
+                    self.callNewPlayer(addr[0])
+                    self.client_callback("CONNECT_GAME", addr)
+                
+                elif data.decode() == "LEAVE_GAME":
+                    print(f"Leave von {addr}, sende Antwort...")
+                    self.clients.remove(addr)
+                    sock.sendto("LEAVE_ACK".encode(), addr)
+                    self.client_callback("LEAVE_GAME", addr)
+
+                elif data.decode() == "RETRIEVE_PLAYERS":
+                    print(f"Retrieve von {addr}, sende Antwort...")
+                    sock.sendto("RETRIEVE_ACK".encode(), addr)
+
+                    data, addr = sock.recvfrom(1024)
+                    if data.decode() == "START_RETRIEVE_PLAYERS":
+                        for client in self.clients:
+                            sock.sendto(client[0].encode(), addr)
+                        sock.sendto("END_RETRIEVE_PLAYERS".encode(), addr)
+                    
 
             except socket.timeout:
                 # Timeout erreicht, weiter prüfen, ob das Stop-Event gesetzt wurde
@@ -40,6 +58,34 @@ class Server():
         
         print("Server-Thread wird beendet.")
         sock.close()  # Socket schließen, wenn die Schleife beendet wird
+    
+    def startGame(self):
+        def handle_client(client):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                sock.sendto("START_GAME".encode(), client)
+                sock.settimeout(5)  # Timeout von 5 Sekunden
+                data, addr = sock.recvfrom(1024)
+                if data.decode() == "START_ACK":
+                    print(f"START_ACK von {addr} erhalten.")
+                else:
+                    print(f"Unerwartete Antwort von {addr}: {data.decode()}")
+            except socket.timeout:
+                print(f"Timeout beim Warten auf START_ACK von {client}. \n Lösche Client")
+                self.clients.remove(client)
+            finally:
+                sock.close()
+
+            for client in self.clients:
+                threading.Thread(target=handle_client, args=(client,)).start()
+
+    def callNewPlayer(self, player):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            
+        for client in self.clients:
+            sock.sendto(f"RECIEVE_CLIENT;{client}".encode(), client)
+
+
 
 
 
