@@ -30,6 +30,18 @@ class TriviaServerCreate(tk.Frame):
         threading.Thread(target=self.load_categories, daemon=True).start()
 
     def submit(self):
+        if(self.name_entry.get() == ""):
+            tk.messagebox.showerror("Fehler", "Bitte einen Namen eingeben.")
+            return
+        if(self.options.get() == "Kategorie auswählen"):
+            tk.messagebox.showerror("Fehler", "Bitte eine Kategorie auswählen.")
+            return
+        if(self.options.get() == "Lade Kategorien..."):
+            tk.messagebox.showerror("Fehler", "Bitte warten bis die Kategorien geladen sind.")
+            return
+        if(self.options.get() == "Keine Kategorie gefunden"):
+            tk.messagebox.showerror("Fehler", "Bitte eine Kategorie auswählen.")
+            return
         game_name = self.name_entry.get()
         game_category = self.options.get()
         self.parent.show_serverwait(game_name, game_category)

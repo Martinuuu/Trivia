@@ -24,6 +24,7 @@ class TriviaClientBrowse(tk.Frame):
 
         join_button = tk.Button(self, text="Server Beitreten", command=self.join_server)
         join_button.pack(pady=10)
+        self.search_server()
 
     def search_server(self):
         self.server_listbox.delete(0, tk.END)
