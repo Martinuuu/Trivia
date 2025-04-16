@@ -56,6 +56,7 @@ def retrievePlayers(address):
         while data.decode() != "END_RETRIEVE_PLAYERS":
             data, addr = sock.recvfrom(1024)
             clients.append(data.decode())
+        clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
         return clients
 
 def listenServer(server_address, update_client_list_callback):
