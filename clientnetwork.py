@@ -64,8 +64,9 @@ def listenServer(server_address, update_client_list_callback):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
 
-    try:
-        while True:
+    while True:
+        try:
+        
             data, addr = sock.recvfrom(1024)
             if addr[0] == server_address:
                 print(f"Nachricht von {server_address}: {data.decode()}")
@@ -75,8 +76,8 @@ def listenServer(server_address, update_client_list_callback):
                     client = data.decode().split(";")[1]
                     update_client_list_callback(client)
                     #sock.sendto("RECIEVE_ACK".encode(), (server_address, port))
-    except socket.timeout:
-        pass  # Continue looping on timeout
+        except socket.timeout:
+            continue  # Continue looping on timeout
 
 # host = input("Host:")
 # # Socket erzeugen
