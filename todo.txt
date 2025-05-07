@@ -1,0 +1,1 @@
+Server Suche von GUI loop trennen -> Um blockieren der GUI zu verhindern
