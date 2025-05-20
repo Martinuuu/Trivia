@@ -62,7 +62,7 @@ def retrievePlayers(address):
         clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
         return clients
 
-def listenServer(server_address, update_client_list_callback):
+def listenServer(server_address):
     # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # INTERNET,UDP
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
@@ -76,11 +76,9 @@ def listenServer(server_address, update_client_list_callback):
                 if data.decode() == "START_GAME":
                     print(f"Sende Start Ack an: {server_address}:{server_port}")
                     sock.sendto("START_ACK".encode(), (server_address, server_port))
-                    
-                if "RECIEVE_CLIENT" in data.decode():
-                    client = data.decode().split(";")[1]
-                    update_client_list_callback(client)
-                    #sock.sendto("RECIEVE_ACK".encode(), (server_address, port))
+
+                if data.decode() == "NOTIFY_NEWPLAYER":
+                    retrievePlayers(server_address)
         except socket.timeout:
             continue  # Continue looping on timeout
 

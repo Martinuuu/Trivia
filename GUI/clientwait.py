@@ -49,10 +49,11 @@ class TriviaClientWait(tk.Frame):
     def server_listen(self):
         clients = retrievePlayers(self.server_address)  # Hole aktuell verbundene Spieler vom Server
         print("Clients: " + str(clients))  # Debug-Ausgabe
-        for client in clients:
-            self.add_client(client)  # Zeige alle vorhandenen Spieler an
-        # Lausche auf neue Spieler, die sich verbinden, und füge sie mit add_client hinzu
-        listenServer(self.server_address, self.add_client)
+        if clients:
+            for client in clients:
+                self.add_client(client)  # Zeige alle vorhandenen Spieler an
+            # Lausche auf neue Spieler, die sich verbinden, und füge sie mit add_client hinzu
+            listenServer(self.server_address)
 
     # Wenn der Zurück-Button gedrückt wird
     def back(self):

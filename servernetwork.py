@@ -36,7 +36,7 @@ class Server():
                     print(f"Connect von {addr}, sende Antwort...")
                     self.clients.append(addr)  # Client zur Liste hinzufügen
                     sock.sendto("CONNECT_ACK".encode(), addr)  # Bestätigung senden
-                    # self.callNewPlayer(addr[0])  # Andere Clients über neuen Spieler informieren
+                    self.callNewPlayer()  # Andere Clients über neuen Spieler informieren
                     self.client_callback("CONNECT_GAME", addr)  # Callback aufrufen
                 
                 elif data.decode() == "LEAVE_GAME":
@@ -81,7 +81,7 @@ class Server():
                 else:
                     print(f"Unerwartete Antwort von {addr}: {data.decode()}")
             except socket.timeout:
-                print(f"Timeout beim Warten auf START_ACK von {client}. \n Lösche Client")
+                print(f"Timeout beim Warten auf START_ACK von {client}. \nLösche Client")
                 self.clients.remove(client)
             except Exception as e:
                 print(f"Anderer Fehler im handle_client: {e}")
@@ -93,8 +93,8 @@ class Server():
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
         for client in self.clients:
-            # Sende an alle Clients die neue Spieler-IP
-            sock.sendto("NOTIFY_NEWPLAYER")
+            # Informiert alle Clients über neuen Spieler
+            sock.sendto("NOTIFY_NEWPLAYER".encode(), client)
 
 
 
