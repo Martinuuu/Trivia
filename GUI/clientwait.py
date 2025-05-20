@@ -47,7 +47,6 @@ class TriviaClientWait(tk.Frame):
 
     # Funktion, die im Thread läuft: Spieler abrufen und auf neue Spieler warten
     def server_listen(self):
-        print("testmest")  # Debug-Ausgabe
         clients = retrievePlayers(self.server_address)  # Hole aktuell verbundene Spieler vom Server
         print("Clients: " + str(clients))  # Debug-Ausgabe
         for client in clients:

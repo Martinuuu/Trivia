@@ -34,7 +34,7 @@ class Server():
                     print(f"Connect von {addr}, sende Antwort...")
                     self.clients.append(addr)  # Client zur Liste hinzufügen
                     sock.sendto("CONNECT_ACK".encode(), addr)  # Bestätigung senden
-                    self.callNewPlayer(addr[0])  # Andere Clients über neuen Spieler informieren
+                    # self.callNewPlayer(addr[0])  # Andere Clients über neuen Spieler informieren
                     self.client_callback("CONNECT_GAME", addr)  # Callback aufrufen
                 
                 elif data.decode() == "LEAVE_GAME":
@@ -69,36 +69,41 @@ class Server():
     
     def startGame(self):
         # Funktion zum Starten des Spiels – benachrichtigt alle Clients
-        
         def handle_client(client):
-            # Für jeden Client ein eigener Thread
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             try:
-                sock.sendto("START_GAME".encode(), client)  # Nachricht zum Start senden
-                sock.settimeout(5)  # Warten auf Antwort mit Timeout (5 Sekunden)
+                sock.sendto("START_GAME".encode(), client)
+                sock.settimeout(5)
                 data, addr = sock.recvfrom(1024)
                 if data.decode() == "START_ACK":
-                    print(f"START_ACK von {addr} erhalten.")  # Bestätigung erhalten
+                    print(f"START_ACK von {addr} erhalten.")
                 else:
                     print(f"Unerwartete Antwort von {addr}: {data.decode()}")
             except socket.timeout:
-                # Wenn Client nicht rechtzeitig antwortet – entfernen
                 print(f"Timeout beim Warten auf START_ACK von {client}. \n Lösche Client")
                 self.clients.remove(client)
+            except ConnectionResetError:
+                # Windows-spezifisch: Client hat Verbindung unerwartet geschlossen
+                print(f"ConnectionResetError: {client} nicht erreichbar, entferne aus Liste.")
+                if client in self.clients:
+                    self.clients.remove(client)
+            except Exception as e:
+                print(f"Anderer Fehler im handle_client: {e}")
             finally:
-                sock.close()  # Socket wieder schließen
+                sock.close()
+
 
         # Für jeden Client neuen Thread starten
         for client in self.clients:
             threading.Thread(target=handle_client, args=(client,)).start()
 
-    def callNewPlayer(self, player):
+    def callNewPlayer(self):
         # Funktion, um alle Clients über einen neuen Spieler zu informieren
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
         for client in self.clients:
             # Sende an alle Clients die neue Spieler-IP
-            sock.sendto(f"RECIEVE_CLIENT;{client}".encode(), client)
+            sock.sendto("NOTIFY_NEWPLAYER")
 
 
 
