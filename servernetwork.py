@@ -9,14 +9,16 @@ class Server():
         self.game_category = game_category  # Kategorie des Spiels (z. B. "Strategie")
         self.stop_event = threading.Event()  # Event-Objekt zum Stoppen der while-Schleife
         self.client_callback = client_callback  # Callback-Funktion, wenn ein Client sich verbindet oder verlässt
+        
+        # Erstelle UDP-Socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind(('', self.port))  # Lausche auf alle Netzwerkschnittstellen (0.0.0.0)
+        self.sock.settimeout(1)  # Timeout von 1 Sekunde für recvfrom, damit Stop-Event geprüft werden kann
     
     def waitConnection(self):
         # Funktion zum Warten auf eingehende Verbindungen und Nachrichten
         
-        # Erstelle UDP-Socket
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(('', self.port))  # Lausche auf alle Netzwerkschnittstellen (0.0.0.0)
-        sock.settimeout(1)  # Timeout von 1 Sekunde für recvfrom, damit Stop-Event geprüft werden kann
+        sock = self.sock  # Verwende das Attribut
         
         print("Server hört wieder auf Broadcast-Anfragen...")
         
@@ -70,11 +72,10 @@ class Server():
     def startGame(self):
         # Funktion zum Starten des Spiels – benachrichtigt alle Clients
         def handle_client(client):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             try:
-                sock.sendto("START_GAME".encode(), client)
-                sock.settimeout(5)
-                data, addr = sock.recvfrom(1024)
+                self.sock.sendto("START_GAME".encode(), client)
+                self.sock.settimeout(5)
+                data, addr = self.sock.recvfrom(1024)
                 if data.decode() == "START_ACK":
                     print(f"START_ACK von {addr} erhalten.")
                 else:
@@ -82,18 +83,8 @@ class Server():
             except socket.timeout:
                 print(f"Timeout beim Warten auf START_ACK von {client}. \n Lösche Client")
                 self.clients.remove(client)
-            except ConnectionResetError:
-                # Windows-spezifisch: Client hat Verbindung unerwartet geschlossen
-                print(f"ConnectionResetError: {client} nicht erreichbar, entferne aus Liste.")
-                if client in self.clients:
-                    self.clients.remove(client)
             except Exception as e:
                 print(f"Anderer Fehler im handle_client: {e}")
-            finally:
-                sock.close()
-
-
-        # Für jeden Client neuen Thread starten
         for client in self.clients:
             threading.Thread(target=handle_client, args=(client,)).start()
 
