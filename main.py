@@ -50,8 +50,8 @@ class App(tk.Tk):
         self.switch_frame(TriviaClientWait, server_address)
     
     # Startet das eigentliche Spiel
-    def show_game(self, server=None):
-        self.switch_frame(TriviaGame, server)
+    def show_game(self, fragen=None):
+        self.switch_frame(TriviaGame, fragen)
 
 # Startpunkt der Anwendung
 if __name__ == "__main__":

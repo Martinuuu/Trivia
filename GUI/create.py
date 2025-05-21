@@ -43,15 +43,16 @@ class TriviaServerCreate(tk.Frame):
             tk.messagebox.showerror("Fehler", "Bitte eine Kategorie auswählen.")
             return
         game_name = self.name_entry.get()
-        game_category = self.options.get()
-        self.parent.show_serverwait(game_name, game_category)
+        game_category_name = self.options.get()
+        game_category_id = self.categories_dict[game_category_name]  # <-- Hole die ID!
+        self.parent.show_serverwait(game_name, game_category_id)  # <-- Übergebe die ID!
 
     def load_categories(self):
         categories = get_categories()
-        
+        self.categories_dict = {cat[1]: cat[0] for cat in categories}  # Name -> ID
+
         menu = self.options_menu["menu"]
         menu.delete(0, "end") 
-        
         self.options.set("Kategorie auswählen")
         for categorie in categories:
             menu.add_command(label=categorie[1], command=lambda value=categorie[1]: self.options.set(value))

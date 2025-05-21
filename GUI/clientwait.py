@@ -6,6 +6,7 @@ import threading
 from clientnetwork import listenServer, retrievePlayers, sock
 import time
 import socket
+import json
 
 
 
@@ -55,12 +56,20 @@ class TriviaClientWait(tk.Frame):
         while self.searching and self.start == False:
             try:
                 self.sock.settimeout(1)
-                data, addr = self.sock.recvfrom(1024)
+                data, addr = self.sock.recvfrom(65536)
                 msg = data.decode()
+                if msg.startswith("QUESTIONS;"):
+                    fragen_json = msg[len("QUESTIONS;"):]
+                    fragen = json.loads(fragen_json)
+                    print("Fragen empfangen:", fragen)
+                    # Wechsle ins Spiel und übergebe die Fragen
+                    self.after(0, lambda: self.parent.show_game(fragen))
+                    break  # Beende das Warten
                 if msg == "START_GAME":
+                    print("START_GAME empfangen, sende START_ACK an", self.server_address)
                     self.start = True
                     self.sock.sendto("START_ACK".encode(), (self.server_address, 7870))
-                    self.after(0, lambda: self.parent.show_game())
+                    # self.after(0, lambda: self.parent.show_game([]))
                 elif msg == "NOTIFY_NEWPLAYER":
                     # Nur jetzt die Liste aktualisieren!
                     clients = retrievePlayers(self.server_address)

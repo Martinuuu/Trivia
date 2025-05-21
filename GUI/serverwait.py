@@ -61,7 +61,7 @@ class TriviaServerWait(tk.Frame):
     # Startet das Spiel, wenn der Button geklickt wird
     def start_game(self):
         self.game_server.startGame()  # Informiere alle Clients, dass das Spiel startet
-        self.parent.show_game(self.game_server)  # Wechsle zur Spielansicht und übergebe den Server
+        self.parent.show_game(self.game_server.fragen)  # Wechsle zur Spielansicht und übergebe den Server
 
     # Zurück-Button wurde gedrückt
     def back(self):

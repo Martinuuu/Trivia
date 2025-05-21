@@ -1,5 +1,7 @@
 import socket 
 import threading
+from trivia_api import Api
+import json
 
 class Server():
     def __init__(self, game_name, game_category, client_callback):
@@ -10,6 +12,8 @@ class Server():
         self.stop_event = threading.Event()  # Event-Objekt zum Stoppen der while-Schleife
         self.client_callback = client_callback  # Callback-Funktion, wenn ein Client sich verbindet oder verlässt
         
+        self.api = Api()  # Instanz der API-Klasse erstellen (z. B. für Fragen)
+
         # Erstelle UDP-Socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', self.port))  # Lausche auf alle Netzwerkschnittstellen (0.0.0.0)
@@ -70,7 +74,10 @@ class Server():
         sock.close()  # Socket schließen, wenn Server gestoppt wird
     
     def startGame(self):
-        # Funktion zum Starten des Spiels – benachrichtigt alle Clients
+        fragen = self.api.get_trivia(self.game_category)
+        self.fragen = fragen
+
+        received_acks = []
         def handle_client(client):
             try:
                 self.sock.sendto("START_GAME".encode(), client)
@@ -78,6 +85,7 @@ class Server():
                 data, addr = self.sock.recvfrom(1024)
                 if data.decode() == "START_ACK":
                     print(f"START_ACK von {addr} erhalten.")
+                    received_acks.append(addr)
                 else:
                     print(f"Unerwartete Antwort von {addr}: {data.decode()}")
             except socket.timeout:
@@ -85,8 +93,17 @@ class Server():
                 self.clients.remove(client)
             except Exception as e:
                 print(f"Anderer Fehler im handle_client: {e}")
+
+        threads = []
         for client in self.clients:
-            threading.Thread(target=handle_client, args=(client,)).start()
+            t = threading.Thread(target=handle_client, args=(client,))
+            t.start()
+            threads.append(t)
+        for t in threads:
+            t.join()  # Warten, bis alle Threads fertig sind
+
+        # Jetzt sind alle ACKs da, jetzt Fragen senden!
+        self.send_questions()
 
     def callNewPlayer(self):
         # Funktion, um alle Clients über einen neuen Spieler zu informieren
@@ -95,6 +112,13 @@ class Server():
         for client in self.clients:
             # Informiert alle Clients über neuen Spieler
             sock.sendto("NOTIFY_NEWPLAYER".encode(), client)
+    
+    def send_questions(self):
+        print("Fragen, die gesendet werden:", self.fragen)
+        fragen_json = json.dumps(self.fragen)
+        for client in self.clients:
+            print(f"Sende Fragen an {client}")
+            self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
 
 
 

@@ -1,10 +1,13 @@
 import tkinter as tk
+import random
+import html
 
 class TriviaGame(tk.Frame):
-    def __init__(self, parent, server=None):
+    def __init__(self, parent, fragen=None):
         super().__init__(parent)
         self.parent = parent
-        self.server = server
+        self.fragen = fragen or []
+        self.frage_index = 0
 
         # Question label at the top
         self.question_label = tk.Label(self, text="Question goes here", font=("Arial", 20), wraplength=400)
@@ -26,8 +29,8 @@ class TriviaGame(tk.Frame):
                 button.grid_remove()  # Buttons zunächst unsichtbar machen
                 self.answer_buttons.append(button)
 
-        if not server:
-            self.show_answers(5000)  # 5000 Millisekunden = 5 Sekunden
+        if self.fragen:
+            self.show_question(self.frage_index)
 
     def show_answers(self, delay):
         self.after(delay, self.show_answer_buttons)
@@ -36,4 +39,22 @@ class TriviaGame(tk.Frame):
         for button in self.answer_buttons:
             button.grid()  # Buttons wieder sichtbar machen
 
+    def show_question(self, index):
+        frage = self.fragen[index]
+        # Frage-Text ggf. HTML-dekodieren
+        self.question_label.config(text=html.unescape(frage["question"]))
+    
+        # Antworten zusammenstellen und mischen
+        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+        answers = [html.unescape(a) for a in answers]
+        random.shuffle(answers)
+    
+        # Buttons mit Antworten belegen
+        for btn, answer in zip(self.answer_buttons, answers):
+            btn.config(text=answer)
+            btn.grid_remove()  # Optional: Buttons erst nach kurzer Zeit anzeigen
+    
+        # Nach kurzer Zeit die Buttons einblenden
+        self.show_answers(1000)  # z.B. nach 1 Sekunde
+    
 
