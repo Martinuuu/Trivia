@@ -47,20 +47,29 @@ def leaveGame(address):
 
 def retrievePlayers(address):
     # sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
-    sock.sendto("RETRIEVE_PLAYERS".encode(),(address,server_port))
-    print("Retrieve gesendet")
-    data, addr = sock.recvfrom(1024)
-    print(data.decode())
-    if data.decode() == "RETRIEVE_ACK":
-        print("Retrieve Ack bekommen")
-        clients = []
-        sock.sendto("START_RETRIEVE_PLAYERS".encode(),(address,server_port))
-        data = "".encode()
-        while data.decode() != "END_RETRIEVE_PLAYERS":
-            data, addr = sock.recvfrom(1024)
-            clients.append(data.decode())
-        clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
-        return clients
+    try:    
+        sock.sendto("RETRIEVE_PLAYERS".encode(),(address,server_port))
+        print("Retrieve gesendet")
+        data, addr = sock.recvfrom(1024)
+        if data.decode() == "START_GAME":
+            return ["START_GAME"]
+        print(data.decode())
+        if data.decode() == "RETRIEVE_ACK":
+            print("Retrieve Ack bekommen")
+            clients = []
+            sock.sendto("START_RETRIEVE_PLAYERS".encode(),(address,server_port))
+            data = "".encode()
+            while data.decode() != "END_RETRIEVE_PLAYERS":
+                data, addr = sock.recvfrom(1024)
+                clients.append(data.decode())
+            clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
+            return clients
+        else:
+            return []
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Clients: {e}")
+        return []
+
 
 def listenServer(server_address):
     # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # INTERNET,UDP
