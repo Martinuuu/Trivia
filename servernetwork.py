@@ -119,24 +119,3 @@ class Server():
         for client in self.clients:
             print(f"Sende Fragen an {client}")
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
-
-
-
-# (Alt-Code zum Empfangen einzelner Nachrichten – hier auskommentiert)
-
-# host = socket.gethostbyname(socket.gethostname())
-
-# UDPsocket = socket.socket(socket.AF_INET,    # Internet
-#                          socket.SOCK_DGRAM)  # UDP-Protokoll
-# UDPsocket.bind(('', port))
-
-# print("Server ist an - PORT: "+str(port)+" - Adresse: "+host)
-
-# nachricht=""
-# while nachricht != "shutdown":
-#     data, addr = UDPsocket.recvfrom(1024)
-#     nachricht = data.decode()
-#     print(nachricht + " von " + str(addr[0]) + " : " + str(addr[1]))
-   
-# UDPsocket.close()
-# print("Server shutdown from "+str(addr[0]))
