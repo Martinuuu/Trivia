@@ -1,5 +1,6 @@
 import socket
 import random
+import time
 # Erfragen von Port und Host des Servers (der muss zuerst gestartet werden!)
 server_port = 7870
 client_port = random.randint(10000, 60000)
@@ -71,26 +72,35 @@ def retrievePlayers(address):
         return []
 
 
-def listenServer(server_address):
+def listenServer(server_address, gui_callback, server_listbox):
     # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # INTERNET,UDP
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
-
-    while True:
+    start = False
+    old_clients = []
+    while start == False:
         try:
-        
-            data, addr = sock.recvfrom(1024)
-            if addr[0] == server_address:
-                print(f"Nachricht von {server_address}: {data.decode()}")
-                if data.decode() == "START_GAME":
-                    print(f"Sende Start Ack an: {server_address}:{server_port}")
-                    sock.sendto("START_ACK".encode(), (server_address, server_port))
-
-                if data.decode() == "NOTIFY_NEWPLAYER":
-                    retrievePlayers(server_address)
+            data, addr = sock.recvfrom(65536)
+            msg = data.decode()
+            if msg == "START_GAME":
+                print("START_GAME empfangen, sende START_ACK an", server_address)
+                start = True
+                sock.sendto("START_ACK".encode(), (server_address, 7870))
+                gui_callback()
+                # self.after(0, lambda: self.parent.show_game([]))
+            if msg == "NOTIFY_NEWPLAYER":
+                # Nur jetzt die Liste aktualisieren!
+                clients = retrievePlayers(server_address)
+                server_listbox.delete(0, "end")
+                for client in clients:
+                    server_listbox.insert("end", client)
         except socket.timeout:
-            continue  # Continue looping on timeout
-
+            continue
+                        
+        if(old_clients == []):
+            time.sleep(0.5)  # Wenn keine Spieler vorhanden sind, warte 0.5 Sekunden
+        else:
+            time.sleep(2)
 # host = input("Host:")
 # # Socket erzeugen
 # UDPsocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 

@@ -51,7 +51,7 @@ class App(tk.Tk):
     
     # Startet das eigentliche Spiel
     def show_game(self, fragen=None):
-        self.switch_frame(TriviaGame, fragen)
+        self.switch_frame(TriviaGame)
 
 # Startpunkt der Anwendung
 if __name__ == "__main__":
