@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import simpledialog
 from tkinter import messagebox
 from clientnetwork import checkServer, connectToGame
 
@@ -39,7 +40,21 @@ class TriviaClientBrowse(tk.Frame):
             messagebox.showerror("Fehler", str(e))
 
     def join_server(self):
-        server_adress = self.server_listbox.get(self.server_listbox.curselection()[0]).split(":")[-1].strip()
-        if connectToGame(server_adress):
-            self.parent.show_clientwait(server_adress)
+        try:
+            # Name abfragen
+            name = simpledialog.askstring("Name eingeben", "Bitte gib deinen Spielernamen ein:")
+            if not name or name.strip() == "":
+                tk.messagebox.showerror("Fehler", "Du musst einen Namen eingeben!")
+                return
+
+            server_adress = self.server_listbox.get(self.server_listbox.curselection()[0]).split(":")[-1].strip()
+            print("Versuche zu verbinden mit:", server_adress)
+            result = connectToGame(server_adress, name)  # Name mitgeben!
+            print("connectToGame Ergebnis:", result)
+            if result:
+                self.parent.show_clientwait(server_adress)
+            else:
+                tk.messagebox.showerror("Fehler", "Verbindung zum Server fehlgeschlagen!")
+        except Exception as e:
+            tk.messagebox.showerror("Fehler", f"Fehler beim Beitreten: {e}")
 

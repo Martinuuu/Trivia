@@ -14,11 +14,9 @@ import json
 class TriviaClientWait(tk.Frame):
     def __init__(self, parent, server_address):
         super().__init__(parent)
-        self.start = False
 
         self.parent = parent
 
-        self.sock = sock
         # Setze Fenstergröße
         self.parent.geometry("550x300")
 
@@ -42,47 +40,25 @@ class TriviaClientWait(tk.Frame):
         # self.startButton.pack(pady=10)
         self.searching = True
         self.wait_for_start = True
-        threading.Thread(target=self.server_listen, daemon=True).start()  # Starte den Thread für die Serverkommunikation
+        threading.Thread(target=listenServer, args=(server_address, self.show_game, self.server_listbox), daemon=True).start()
         
 
     # Methode zum Hinzufügen eines Clients zur Listbox
     def add_client(self, client_address):
-        self.server_listbox.insert(tk.END, f"Client: {client_address}")
-
+        # Namen aus dem Server holen, falls vorhanden
+        name = None
+        if hasattr(self, "game_server") and hasattr(self.game_server, "client_names"):
+            name = self.game_server.client_names.get(client_address)
+        if name:
+            self.server_listbox.insert(tk.END, f"Spieler: {name}")
+        else:
+            self.server_listbox.insert(tk.END, f"Client: {client_address[0]}:{client_address[1]}")
+    
+    def show_game(self, fragen=None):
+        self.after(0, lambda: self.parent.show_game(fragen, "client"))  # Zeigt das Spiel an, wenn die Fragen empfangen wurden
 
     # Funktion, die im Thread läuft: Spieler abrufen und auf neue Spieler warten
-    def server_listen(self):
-        old_clients = []
-        while self.searching and self.start == False:
-            try:
-                self.sock.settimeout(1)
-                data, addr = self.sock.recvfrom(65536)
-                msg = data.decode()
-                if msg.startswith("QUESTIONS;"):
-                    fragen_json = msg[len("QUESTIONS;"):]
-                    fragen = json.loads(fragen_json)
-                    print("Fragen empfangen:", fragen)
-                    # Wechsle ins Spiel und übergebe die Fragen
-                    self.after(0, lambda: self.parent.show_game(fragen))
-                    break  # Beende das Warten
-                if msg == "START_GAME":
-                    print("START_GAME empfangen, sende START_ACK an", self.server_address)
-                    self.start = True
-                    self.sock.sendto("START_ACK".encode(), (self.server_address, 7870))
-                    # self.after(0, lambda: self.parent.show_game([]))
-                elif msg == "NOTIFY_NEWPLAYER":
-                    # Nur jetzt die Liste aktualisieren!
-                    clients = retrievePlayers(self.server_address)
-                    self.server_listbox.delete(0, tk.END)
-                    for client in clients:
-                        self.server_listbox.insert(tk.END, client)
-            except socket.timeout:
-                continue
-                        
-            if(old_clients == []):
-                time.sleep(0.5)  # Wenn keine Spieler vorhanden sind, warte 0.5 Sekunden
-            else:
-                time.sleep(2)
+
 
 
     # Wenn der Zurück-Button gedrückt wird

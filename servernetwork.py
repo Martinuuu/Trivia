@@ -2,6 +2,7 @@ import socket
 import threading
 from trivia_api import Api
 import json
+import time
 
 class Server():
     def __init__(self, game_name, game_category, client_callback):
@@ -11,8 +12,12 @@ class Server():
         self.game_category = game_category  # Kategorie des Spiels (z. B. "Strategie")
         self.stop_event = threading.Event()  # Event-Objekt zum Stoppen der while-Schleife
         self.client_callback = client_callback  # Callback-Funktion, wenn ein Client sich verbindet oder verlässt
-        
+        self.client_names = {}  # addr -> Name des Clients (z. B. "Max Mustermann")
         self.api = Api()  # Instanz der API-Klasse erstellen (z. B. für Fragen)
+
+        self.current_answers = {}  # addr -> Antwort
+        self.scores = {}           # addr -> Punkte
+        self.current_question_index = 0
 
         # Erstelle UDP-Socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -35,13 +40,14 @@ class Server():
                     print(f"Anfrage von {addr}, sende Antwort...")
                     sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category}".encode(), addr)
 
-                elif data.decode() == "CONNECT_GAME":
-                    # Wenn ein Client beitreten will
-                    print(f"Connect von {addr}, sende Antwort...")
-                    self.clients.append(addr)  # Client zur Liste hinzufügen
-                    sock.sendto("CONNECT_ACK".encode(), addr)  # Bestätigung senden
-                    self.callNewPlayer()  # Andere Clients über neuen Spieler informieren
-                    self.client_callback("CONNECT_GAME", addr)  # Callback aufrufen
+                elif data.decode().startswith("CONNECT_GAME;"):
+                    name = data.decode().split(";", 1)[1]
+                    print(f"Connect von {addr} mit Name {name}, sende Antwort...")
+                    self.clients.append(addr)
+                    self.client_names[addr] = name  # Name speichern
+                    sock.sendto("CONNECT_ACK".encode(), addr)
+                    self.callNewPlayer()
+                    self.client_callback("CONNECT_GAME", addr)
                 
                 elif data.decode() == "LEAVE_GAME":
                     # Wenn ein Client das Spiel verlassen möchte
@@ -51,16 +57,36 @@ class Server():
                     self.client_callback("LEAVE_GAME", addr)  # Callback aufrufen
 
                 elif data.decode() == "RETRIEVE_PLAYERS":
-                    # Wenn ein Client wissen möchte, wer spielt mit?
                     print(f"Retrieve von {addr}, sende Antwort...")
                     sock.sendto("RETRIEVE_ACK".encode(), addr)  # Bestätigung senden
-
+                
                     data, addr = sock.recvfrom(1024)  # Erwartet START_RETRIEVE_PLAYERS
                     if data.decode() == "START_RETRIEVE_PLAYERS":
+                        print(f"Starte Retrieve von {addr}, sende Spieler...")
                         for client in self.clients:
-                            sock.sendto(client[0].encode(), addr)  # Nur IP senden
+                            # Sende Name statt IP!
+                            name = self.client_names.get(client, client[0])
+                            sock.sendto(f"NAME;{name}".encode(), addr)
+                            print(f"Sende Client: {name} an {addr}")
                         sock.sendto("END_RETRIEVE_PLAYERS".encode(), addr)  # Ende signalisieren
-                    
+                        print(f"Ende Retrieve von {addr}, sende END_RETRIEVE_PLAYERS")
+                
+                
+                elif data.decode().startswith("ANSWER;"):
+                    answer = data.decode().split(";", 1)[1]
+                    print(f"Antwort von {addr}: {answer}")
+                    self.current_answers[addr] = answer
+
+                    # Punkte initialisieren, falls noch nicht vorhanden
+                    if addr not in self.scores:
+                        self.scores[addr] = 0
+
+                    # Wenn alle Clients geantwortet haben:
+                    if len(self.current_answers) == len(self.clients):
+                        self.evaluate_answers()
+                        self.current_answers = {}
+                        self.current_question_index += 1
+                        self.send_next_question()    
 
             except socket.timeout:
                 # Timeout nach 1 Sekunde – prüfen, ob Schleife gestoppt werden soll
@@ -73,8 +99,26 @@ class Server():
         print("Server-Thread wird beendet.")
         sock.close()  # Socket schließen, wenn Server gestoppt wird
     
+    def evaluate_answers(self):
+        # Hole die richtige Antwort der aktuellen Frage
+        frage = self.fragen[self.current_question_index]
+        correct = frage["correct_answer"]
+        print(f"Richtige Antwort: {correct}")
+
+        # Punkte vergeben
+        for addr, answer in self.current_answers.items():
+            if answer == correct:
+                self.scores[addr] += 1
+
+        # Punkte an alle Clients schicken
+        for client in self.clients:
+            score = self.scores.get(client, 0)
+            msg = f"SCORE;{score}"
+            self.sock.sendto(msg.encode(), client)
+
+
     def startGame(self):
-        fragen = self.api.get_trivia(self.game_category)
+        fragen = self.api.get_trivia(self.game_category, amount=20)
         self.fragen = fragen
 
         received_acks = []
@@ -105,6 +149,8 @@ class Server():
         # Jetzt sind alle ACKs da, jetzt Fragen senden!
         self.send_questions()
 
+        
+
     def callNewPlayer(self):
         # Funktion, um alle Clients über einen neuen Spieler zu informieren
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -119,3 +165,33 @@ class Server():
         for client in self.clients:
             print(f"Sende Fragen an {client}")
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
+
+
+    def send_next_question(self):
+        # Wenn weniger als 10 Fragen übrig sind, hole 10 neue dazu
+        if len(self.fragen) - self.current_question_index < 10:
+            neue_fragen = self.api.get_trivia(self.game_category, amount=10)
+            if neue_fragen:
+                self.fragen.extend(neue_fragen)
+            else:
+                print("Keine neuen Fragen von der API erhalten.")
+                # Optional: Spiel beenden oder Info an die Clients schicken
+
+        # Prüfe, ob noch Fragen vorhanden sind
+        if self.current_question_index >= len(self.fragen):
+            print("Keine Fragen mehr verfügbar.")
+            return
+
+        frage = self.fragen[self.current_question_index]
+        fragen_json = json.dumps([frage])
+        for client in self.clients:
+            self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
+
+        # Jetzt das GUI-Update für die neue Frage und Scores!
+        if hasattr(self.client_callback, "__call__"):
+            # Erzeuge ein dict: name -> score
+            name_scores = {}
+            for addr, score in self.scores.items():
+                name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
+                name_scores[name] = score
+            self.client_callback("UPDATE_GUI", frage, name_scores)

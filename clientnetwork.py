@@ -1,6 +1,7 @@
 import socket
 import random
 import time
+import json
 # Erfragen von Port und Host des Servers (der muss zuerst gestartet werden!)
 server_port = 7870
 client_port = random.randint(10000, 60000)
@@ -29,9 +30,10 @@ def checkServer():
         print("Kein Server gefunden.")
     return server_list
 
-def connectToGame(adress):
-    # sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
-    sock.sendto("CONNECT_GAME".encode(),(adress,server_port))
+def connectToGame(address, name):
+    # Sende Name mit
+    msg = f"CONNECT_GAME;{name}"
+    sock.sendto(msg.encode(), (address, server_port))
 
     data, addr = sock.recvfrom(1024)
     if data.decode() == "CONNECT_ACK":
@@ -60,9 +62,11 @@ def retrievePlayers(address):
             clients = []
             sock.sendto("START_RETRIEVE_PLAYERS".encode(),(address,server_port))
             data = "".encode()
-            while data.decode() != "END_RETRIEVE_PLAYERS":
+            while "END_RETRIEVE_PLAYERS" not in data.decode():
                 data, addr = sock.recvfrom(1024)
                 clients.append(data.decode())
+                print(f"Client: {data.decode()} von {addr}")
+            print("Retrieve abgeschlossen")
             clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
             return clients
         else:
@@ -77,16 +81,15 @@ def listenServer(server_address, gui_callback, server_listbox):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(2)  # 2 Sekunden warten auf Antwort
     start = False
-    old_clients = []
     while start == False:
         try:
             data, addr = sock.recvfrom(65536)
             msg = data.decode()
             if msg == "START_GAME":
                 print("START_GAME empfangen, sende START_ACK an", server_address)
-                start = True
+                # start = True
                 sock.sendto("START_ACK".encode(), (server_address, 7870))
-                gui_callback()
+                # gui_callback()
                 # self.after(0, lambda: self.parent.show_game([]))
             if msg == "NOTIFY_NEWPLAYER":
                 # Nur jetzt die Liste aktualisieren!
@@ -94,19 +97,14 @@ def listenServer(server_address, gui_callback, server_listbox):
                 server_listbox.delete(0, "end")
                 for client in clients:
                     server_listbox.insert("end", client)
+            if msg.startswith("QUESTIONS;"):
+                print("Fragen empfangen:", msg)
+                fragen_json = msg[len("QUESTIONS;"):]
+                fragen = json.loads(fragen_json)
+                gui_callback(fragen)  # Übergib die Fragen an das GUI
         except socket.timeout:
             continue
-                        
-        if(old_clients == []):
-            time.sleep(0.5)  # Wenn keine Spieler vorhanden sind, warte 0.5 Sekunden
-        else:
-            time.sleep(2)
-# host = input("Host:")
-# # Socket erzeugen
-# UDPsocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
-# nachricht=""
-# while nachricht != "shutdown":
-#   nachricht=input("Nachricht:")
-# # Nachricht versenden
-#   UDPsocket.sendto(nachricht.encode(),(host,port))
-# UDPsocket.close()
+
+def send_answer(server_address, answer):
+    msg = f"ANSWER;{answer}"
+    sock.sendto(msg.encode(), (server_address, server_port))

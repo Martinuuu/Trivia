@@ -47,6 +47,9 @@ class TriviaServerWait(tk.Frame):
             self.add_client(args[0])  # Neuer Client verbunden
         elif command == "LEAVE_GAME":
             self.remove_client(args[0])  # Client hat verlassen
+        elif command == "UPDATE_GUI":
+            frage, scores = args
+            self.update_game_state(frage, scores)
 
     # Fügt einen Client zur Listbox hinzu
     def add_client(self, client_address):
@@ -61,7 +64,7 @@ class TriviaServerWait(tk.Frame):
     # Startet das Spiel, wenn der Button geklickt wird
     def start_game(self):
         self.game_server.startGame()  # Informiere alle Clients, dass das Spiel startet
-        self.parent.show_game(self.game_server.fragen)  # Wechsle zur Spielansicht und übergebe den Server
+        self.parent.show_game(self.game_server.fragen, "server")  # Wechsle zur Spielansicht und übergebe den Server
 
     # Zurück-Button wurde gedrückt
     def back(self):
@@ -69,3 +72,15 @@ class TriviaServerWait(tk.Frame):
         self.game_server.stop_event.set()  # Setzt das Stop-Event, damit der Server-Thread aufhört
         self.waitThread.join()  # Wartet auf sauberes Beenden des Threads
         self.parent.show_servercreate()  # Geht zurück zum Erstellen-Bildschirm
+
+    def update_game_state(self, frage, scores):
+        if not hasattr(self, "label") or not self.winfo_exists():
+            return  # Frame oder Label existiert nicht mehr, also kein Update!
+        try:
+            self.label.config(text=f"Frage: {frage['question']}")
+            self.server_listbox.delete(0, tk.END)
+            for addr, score in scores.items():
+                self.server_listbox.insert(tk.END, f"{addr[0]}:{addr[1]} - Punkte: {score}")
+        except tk.TclError:
+            # Widget wurde zerstört
+            pass
