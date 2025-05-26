@@ -8,7 +8,7 @@ class Server():
     def __init__(self, game_name, game_category, client_callback):
         self.port = 7870  # Port, auf dem der Server lauscht
         self.clients = []  # Liste der verbundenen Clients (IP, Port)
-        self.game_name = game_name  # Name des Spiels (z. B. "TicTacToe")
+        self.game_name = game_name  # Name des Spiels
         self.game_category = game_category  # Kategorie des Spiels (z. B. "Strategie")
         self.stop_event = threading.Event()  # Event-Objekt zum Stoppen der while-Schleife
         self.client_callback = client_callback  # Callback-Funktion, wenn ein Client sich verbindet oder verlässt
@@ -35,9 +35,13 @@ class Server():
         while not self.stop_event.is_set():
             try:
                 data, addr = sock.recvfrom(1024)  # Empfang von bis zu 1024 Bytes
-                if data.decode() == "DISCOVER_GAME":
-                    # Wenn ein Client das Spiel im Netzwerk sucht
+                if data.decode() == "DISCOVER_GAME":                   
+                    # Wenn ein Client das Spiel im Netzwerk sucht     
                     print(f"Anfrage von {addr}, sende Antwort...")
+                    
+                    if addr in self.clients:
+                        self.remove_player(addr)
+                    
                     sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category}".encode(), addr)
 
                 elif data.decode().startswith("CONNECT_GAME;"):
@@ -50,11 +54,8 @@ class Server():
                     self.client_callback("CONNECT_GAME", addr)
                 
                 elif data.decode() == "LEAVE_GAME":
-                    # Wenn ein Client das Spiel verlassen möchte
                     print(f"Leave von {addr}, sende Antwort...")
-                    self.clients.remove(addr)  # Client entfernen
-                    sock.sendto("LEAVE_ACK".encode(), addr)  # Bestätigung senden
-                    self.client_callback("LEAVE_GAME", addr)  # Callback aufrufen
+                    self.remove_player(addr)
 
                 elif data.decode() == "RETRIEVE_PLAYERS":
                     print(f"Retrieve von {addr}, sende Antwort...")
@@ -98,6 +99,13 @@ class Server():
         
         print("Server-Thread wird beendet.")
         sock.close()  # Socket schließen, wenn Server gestoppt wird
+
+    def remove_player(self, addr):
+        # Wenn ein Client das Spiel verlassen möchte
+        print(f"Entferne {addr}")
+        self.clients.remove(addr)  # Client entfernen
+        self.sock.sendto("LEAVE_ACK".encode(), addr)  # Bestätigung senden
+        self.client_callback("LEAVE_GAME", addr)  # Callback aufrufen
     
     def evaluate_answers(self):
         # Hole die richtige Antwort der aktuellen Frage

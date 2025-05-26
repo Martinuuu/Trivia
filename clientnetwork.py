@@ -26,6 +26,9 @@ def checkServer():
         print(f"Antwort von Server: {data[0]} von {addr}")
         if data[0] == "DISCOVER_ACK":
             server_list.append(f"{data[1]} - {data[2]}: {addr[0]}")
+        else: 
+            checkServer()
+            time.sleep(1)
     except socket.timeout:
         print("Kein Server gefunden.")
     return server_list
@@ -76,12 +79,11 @@ def retrievePlayers(address):
         return []
 
 
-def listenServer(server_address, gui_callback, server_listbox):
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # INTERNET,UDP
+def listenServer(server_address, gui_callback, server_listbox, stop_event=None):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.settimeout(2)  # 2 Sekunden warten auf Antwort
+    sock.settimeout(2)
     start = False
-    while start == False:
+    while not (stop_event and stop_event.is_set()) and start == False:
         try:
             data, addr = sock.recvfrom(65536)
             msg = data.decode()
@@ -92,11 +94,11 @@ def listenServer(server_address, gui_callback, server_listbox):
                 # gui_callback()
                 # self.after(0, lambda: self.parent.show_game([]))
             if msg == "NOTIFY_NEWPLAYER":
-                # Nur jetzt die Liste aktualisieren!
                 clients = retrievePlayers(server_address)
-                server_listbox.delete(0, "end")
-                for client in clients:
-                    server_listbox.insert("end", client)
+                if server_listbox.winfo_exists():
+                    server_listbox.delete(0, "end")
+                    for client in clients:
+                        server_listbox.insert("end", client)
             if msg.startswith("QUESTIONS;"):
                 print("Fragen empfangen:", msg)
                 fragen_json = msg[len("QUESTIONS;"):]
@@ -104,6 +106,9 @@ def listenServer(server_address, gui_callback, server_listbox):
                 gui_callback(fragen)  # Übergib die Fragen an das GUI
         except socket.timeout:
             continue
+        except Exception as e:
+            print(f"Fehler im listenServer: {e}")
+            break
 
 def send_answer(server_address, answer):
     msg = f"ANSWER;{answer}"

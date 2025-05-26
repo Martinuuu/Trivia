@@ -40,8 +40,14 @@ class TriviaClientWait(tk.Frame):
         # self.startButton.pack(pady=10)
         self.searching = True
         self.wait_for_start = True
-        threading.Thread(target=listenServer, args=(server_address, self.show_game, self.server_listbox), daemon=True).start()
-        
+        self.stop_event = threading.Event()
+        self.listener_thread = threading.Thread(
+            target=self.listen_wrapper, daemon=True
+        )
+        self.listener_thread.start()
+
+    def listen_wrapper(self):
+        listenServer(self.server_address, self.show_game, self.server_listbox, self.stop_event)
 
     # Methode zum Hinzufügen eines Clients zur Listbox
     def add_client(self, client_address):
@@ -63,7 +69,9 @@ class TriviaClientWait(tk.Frame):
 
     # Wenn der Zurück-Button gedrückt wird
     def back(self):
-        print("Stopping Wait")
-        self.game_server.stop_event.set()  # Versucht, das Event zu setzen (Problem: self.game_server existiert hier nicht!)
-        self.waitThread.join()  # Wartet auf das Ende des Threads
-        self.parent.show_servercreate()  # Geht zurück zum Spiel-Erstellungs-Bildschirm
+        self.parent.show_serverbrowse()  # Geht zurück zum Spiel-Erstellungs-Bildschirm
+
+    def destroy(self):
+        # Wird aufgerufen, wenn das Frame zerstört wird
+        self.stop_event.set()
+        super().destroy()
