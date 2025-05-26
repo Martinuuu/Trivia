@@ -8,6 +8,10 @@ class TriviaGame(tk.Frame):
     def __init__(self, parent, fragen=None, rolle=None, server_address=None):
         super().__init__(parent)
         self.parent = parent
+        if rolle == "server":
+            self.parent.geometry("800x850")
+        else:
+            self.parent.geometry("800x600")
         self.fragen = fragen or []
         self.frage_index = 0
         self.rolle = rolle  # Rolle des Spielers (client/server)
