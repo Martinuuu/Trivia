@@ -3,6 +3,7 @@ import threading
 from trivia_api import Api
 import json
 import time
+import random
 
 class Server():
     def __init__(self, game_name, game_category, client_callback):
@@ -73,21 +74,36 @@ class Server():
                         print(f"Ende Retrieve von {addr}, sende END_RETRIEVE_PLAYERS")
                 
                 
-                # elif data.decode().startswith("ANSWER;"):
-                #     answer = data.decode().split(";", 1)[1]
-                #     print(f"Antwort von {addr}: {answer}")
-                #     self.current_answers[addr] = answer
+                elif data.decode().startswith("ANSWER;"):
+                    answer = data.decode().split(";", 1)[1]
+                    print(f"Antwort von {addr}: {answer}")
+                    self.current_answers[addr] = answer
 
-                #     # Punkte initialisieren, falls noch nicht vorhanden
-                #     if addr not in self.scores:
-                #         self.scores[addr] = 0
+                    # Punkte initialisieren, falls noch nicht vorhanden
+                    if addr not in self.scores:
+                        self.scores[addr] = 0
 
-                #     # Wenn alle Clients geantwortet haben:
-                #     if len(self.current_answers) == len(self.clients):
-                #         self.evaluate_answers()
-                #         self.current_answers = {}
-                #         self.current_question_index += 1
-                #         self.send_next_question()    
+                    # Wenn alle Clients geantwortet haben:
+                    if len(self.current_answers) == len(self.clients):
+                        self.evaluate_answers()
+                        self.current_answers = {}
+                    
+                        # Server-GUI: Zeige die nächste Frage sofort!
+                        self.current_question_index += 1
+                        if hasattr(self.client_callback, "__call__"):
+                            frage = self.fragen[self.current_question_index] if self.current_question_index < len(self.fragen) else None
+                            name_scores = {}
+                            for addr, score in self.scores.items():
+                                name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
+                                name_scores[name] = score
+                            if frage:
+                                self.client_callback("UPDATE_GUI", frage, name_scores)
+                    
+                        # Clients: Sende die nächste Frage erst nach 1 Sekunde
+                        def send_next():
+                            time.sleep(1)
+                            self.send_next_question()
+                        threading.Thread(target=send_next, daemon=True).start()
 
             except socket.timeout:
                 # Timeout nach 1 Sekunde – prüfen, ob Schleife gestoppt werden soll
@@ -123,6 +139,15 @@ class Server():
             score = self.scores.get(client, 0)
             msg = f"SCORE;{score}"
             self.sock.sendto(msg.encode(), client)
+
+        # GUI-Update: Highlight richtige Antwort und Scores anzeigen
+        if hasattr(self.client_callback, "__call__"):
+            frage = self.fragen[self.current_question_index]
+            name_scores = {}
+            for addr, score in self.scores.items():
+                name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
+                name_scores[name] = score
+            self.client_callback("UPDATE_GUI", frage, name_scores)
 
 
     def startGame(self):
@@ -171,10 +196,12 @@ class Server():
             sock.sendto("NOTIFY_NEWPLAYER".encode(), client)
     
     def send_questions(self):
-        print("Fragen, die gesendet werden:", self.fragen)
+        for frage in self.fragen:
+            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+            random.shuffle(answers)
+            frage["all_answers"] = answers  # Neue Reihenfolge speichern
         fragen_json = json.dumps(self.fragen)
         for client in self.clients:
-            print(f"Sende Fragen an {client}")
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
 
 
@@ -194,15 +221,18 @@ class Server():
             return
 
         frage = self.fragen[self.current_question_index]
+        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+        random.shuffle(answers)
+        frage["all_answers"] = answers
         fragen_json = json.dumps([frage])
         for client in self.clients:
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
 
         # Jetzt das GUI-Update für die neue Frage und Scores!
-        if hasattr(self.client_callback, "__call__"):
-            # Erzeuge ein dict: name -> score
-            name_scores = {}
-            for addr, score in self.scores.items():
-                name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
-                name_scores[name] = score
-            self.client_callback("UPDATE_GUI", frage, name_scores)
+        # if hasattr(self.client_callback, "__call__"):
+        #     # Erzeuge ein dict: name -> score
+        #     name_scores = {}
+        #     for addr, score in self.scores.items():
+        #         name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
+        #         name_scores[name] = score
+        #     self.client_callback("UPDATE_GUI", frage, name_scores)

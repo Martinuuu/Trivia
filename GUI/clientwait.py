@@ -49,7 +49,10 @@ class TriviaClientWait(tk.Frame):
         self.listener_thread.start()
 
     def listen_wrapper(self):
-        listenServer(self.server_address, self.show_game, self.server_listbox, self.stop_event)
+        def gui_callback_in_main_thread(fragen):
+            # Callback wird IMMER im Tkinter-Hauptthread ausgeführt
+            self.after(0, lambda: self.show_game(fragen))
+        listenServer(self.server_address, gui_callback_in_main_thread, self.server_listbox, self.stop_event)
 
     # Methode zum Hinzufügen eines Clients zur Listbox
     def add_client(self, client_address):
@@ -63,7 +66,18 @@ class TriviaClientWait(tk.Frame):
             self.server_listbox.insert(tk.END, f"Client: {client_address[0]}:{client_address[1]}")
     
     def show_game(self, fragen=None):
-        self.after_id = self.after(0, lambda: self.parent.show_game(fragen, "client"))
+        # Stoppe Listener und Timer, bevor das Frame gewechselt wird!
+        self.stop_event.set()
+        if hasattr(self, "listener_thread") and self.listener_thread.is_alive():
+            self.listener_thread.join(timeout=1)
+        if hasattr(self, "after_id") and self.after_id is not None:
+            try:
+                if self.winfo_exists():
+                    self.after_cancel(self.after_id)
+            except Exception as e:
+                print("Error cancelling after_id in show_game: ", e)
+            self.after_id = None
+        self.parent.show_game(fragen, "client")
 
     # Funktion, die im Thread läuft: Spieler abrufen und auf neue Spieler warten
 
@@ -79,7 +93,7 @@ class TriviaClientWait(tk.Frame):
             self.listener_thread.join(timeout=1)
         if hasattr(self, "after_id") and self.after_id is not None:
             try:
-                if self.winfo_exists():
+                if self.winfo_exists() and self.tk.call("after", "info", self.after_id):
                     self.after_cancel(self.after_id)
             except Exception as e:
                 print("Error cancelling after_id: ", e)

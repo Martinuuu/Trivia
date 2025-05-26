@@ -52,22 +52,23 @@ class App(tk.Tk):
     # Startet das eigentliche Spiel
     def show_game(self, fragen=None, rolle=None):
         server_address = None
-        old_frame = self.current_frame  # Merke das alte Frame (z.B. TriviaServerWait)
+        old_frame = self.current_frame
         if rolle == "client":
             if hasattr(self.current_frame, "server_address"):
                 server_address = self.current_frame.server_address
     
         self.switch_frame(TriviaGame, fragen, rolle, server_address)
     
-        # Jetzt zeigt self.current_frame auf das neue Spiel-Frame!
         if rolle == "server":
-            # Server-Instanz aus dem alten Frame holen
             if hasattr(old_frame, "game_server"):
                 def gui_update_callback(command, *args):
                     if command == "UPDATE_GUI":
-                        self.current_frame.update_scores_and_question(*args)
+                        frage, scores = args
+                        # 1. Zeige die richtige Antwort grün an
+                        self.current_frame.highlight_correct_answer(frage)
+                        # 2. Warte z.B. 1 Sekunde, dann zeige die nächste Frage
+                        self.current_frame.after(1000, lambda: self.current_frame.update_scores_and_question(frage, scores))
                 old_frame.game_server.client_callback = gui_update_callback
-                # Optional: Referenz auf den Server im Spiel-Frame speichern, falls du sie brauchst
                 self.current_frame.game_server = old_frame.game_server
 
 # Startpunkt der Anwendung

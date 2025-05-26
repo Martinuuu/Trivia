@@ -2,6 +2,7 @@ import tkinter as tk
 import random
 import html
 from clientnetwork import send_answer
+import threading
 
 class TriviaGame(tk.Frame):
     def __init__(self, parent, fragen=None, rolle=None, server_address=None):
@@ -34,7 +35,7 @@ class TriviaGame(tk.Frame):
             for j in range(2):
                 button = tk.Button(self.answer_frame, text=f"Answer {i*2 + j + 1}", font=("Arial", 16), width=20, height=2)
                 button.grid(row=i, column=j, padx=10, pady=10)
-                button.grid_remove()
+                # button.grid_remove()
                 button.config(command=lambda b=button: self.on_answer(b["text"]))
                 self.answer_buttons.append(button)
 
@@ -48,6 +49,52 @@ class TriviaGame(tk.Frame):
             self.score_listbox.pack(fill=tk.X, expand=True, padx=20)
             # Initial befüllen, falls Scores übergeben werden
             self.update_scores({})
+        
+        self.stop_event = threading.Event()
+        if self.rolle == "client" and self.server_address:
+            self.listener_thread = threading.Thread(target=self.listen_for_updates, daemon=True)
+            self.listener_thread.start()
+
+    def listen_for_updates(self):
+        from clientnetwork import sock
+        import json
+        sock.settimeout(1)
+        while not self.stop_event.is_set():
+            try:
+                data, addr = sock.recvfrom(65536)
+                msg = data.decode()
+                if msg.startswith("QUESTIONS;"):
+                    fragen_json = msg[len("QUESTIONS;"):]
+                    fragen = json.loads(fragen_json)
+                    # Neue Frage anzeigen (immer im Hauptthread!)
+                    self.after(0, lambda: self.show_new_question(fragen))
+                elif msg.startswith("SCORE;"):
+                    # Optional: Score-Update anzeigen
+                    pass
+            except Exception:
+                continue
+
+
+    def highlight_correct_answer(self, frage):
+        # Finde die richtige Antwort
+        if "all_answers" in frage:
+            answers = [html.unescape(a) for a in frage["all_answers"]]
+        else:
+            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+            answers = [html.unescape(a) for a in answers]
+            random.shuffle(answers)
+        correct = html.unescape(frage["correct_answer"])
+        for btn, answer in zip(self.answer_buttons, answers):
+            if answer == correct:
+                btn.config(bg="green")
+            else:
+                btn.config(bg="SystemButtonFace")  # Standardfarbe
+
+    def show_new_question(self, fragen):
+        # Ersetze aktuelle Frage(n) durch die neue(n)
+        self.fragen = fragen
+        self.frage_index = 0
+        self.show_question(self.frage_index)
 
     def update_scores(self, scores):
         if hasattr(self, "score_listbox"):
@@ -57,12 +104,16 @@ class TriviaGame(tk.Frame):
     
     def update_scores_and_question(self, frage, scores):
         self.question_label.config(text=html.unescape(frage["question"]))
-        # Antworten aktualisieren:
-        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-        answers = [html.unescape(a) for a in answers]
-        random.shuffle(answers)
+        # Antworten in Server-Reihenfolge übernehmen
+        if "all_answers" in frage:
+            answers = [html.unescape(a) for a in frage["all_answers"]]
+        else:
+            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+            answers = [html.unescape(a) for a in answers]
+            random.shuffle(answers)
         for btn, answer in zip(self.answer_buttons, answers):
             btn.config(text=answer)
+            btn.config(command=lambda a=answer: self.on_answer(a))
         self.update_scores(scores)
 
     def update_timer(self, seconds):
@@ -70,31 +121,36 @@ class TriviaGame(tk.Frame):
 
     def show_answers(self, delay):
         # self.after(delay, self.show_answer_buttons)
-        self.after_id = self.after(delay, self.show_answer_buttons)
+        try:
+            self.after_id = self.after(delay, self.show_answer_buttons)
+        except Exception as e:
+            print("Error in show_answers:", e)
+            self.after_id = None
+
+
     def show_answer_buttons(self):
         for button in self.answer_buttons:
             button.grid()  # Buttons wieder sichtbar machen
 
     def show_question(self, index):
         frage = self.fragen[index]
-        # Frage-Text ggf. HTML-dekodieren
-
-
         self.question_label.config(text=html.unescape(frage["question"]))
         self.difficulty_label = tk.Label(self, text=frage["difficulty"], font=("Arial", 12))
-    
-        # Antworten zusammenstellen und mischen
-        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-        answers = [html.unescape(a) for a in answers]
-        random.shuffle(answers)
-    
-        # Buttons mit Antworten belegen
+
+        # Antworten in Server-Reihenfolge übernehmen
+        if "all_answers" in frage:
+            answers = [html.unescape(a) for a in frage["all_answers"]]
+        else:
+            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+            answers = [html.unescape(a) for a in answers]
+            random.shuffle(answers)
+
         for btn, answer in zip(self.answer_buttons, answers):
-            btn.config(text=answer)
-            btn.grid_remove()  # Optional: Buttons erst nach kurzer Zeit anzeigen
-    
-        # Nach kurzer Zeit die Buttons einblenden
-        self.show_answers(1000)  # z.B. nach 1 Sekunde
+            btn.config(text=answer, bg="SystemButtonFace")
+            btn.config(command=lambda a=answer: self.on_answer(a))
+            btn.grid_remove()
+
+        self.show_answers(1000)
     
     def on_answer(self, answer):
         if self.rolle == "client" and self.server_address:
@@ -102,12 +158,15 @@ class TriviaGame(tk.Frame):
             print(f"Antwort gesendet: {answer}")
 
     def destroy(self):
-        # Timer abbrechen, falls noch aktiv
-        if self.after_id is not None:
+        if hasattr(self, "stop_event"):
+            self.stop_event.set()
+        if hasattr(self, "listener_thread") and self.listener_thread.is_alive():
+            self.listener_thread.join(timeout=1)
+        if hasattr(self, "after_id") and self.after_id is not None:
             try:
                 if self.winfo_exists():
                     self.after_cancel(self.after_id)
             except Exception as e:
-                print("Fehler beim Abbrechen des Timers:", e)
-            self.after_id = None
+                print("Error cancelling after_id: ", e)
+            self.after_id = None 
         super().destroy()
