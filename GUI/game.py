@@ -76,19 +76,13 @@ class TriviaGame(tk.Frame):
 
 
     def highlight_correct_answer(self, frage):
-        # Finde die richtige Antwort
-        if "all_answers" in frage:
-            answers = [html.unescape(a) for a in frage["all_answers"]]
-        else:
-            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-            answers = [html.unescape(a) for a in answers]
-            random.shuffle(answers)
+        answers = [html.unescape(a) for a in frage["all_answers"]]
         correct = html.unescape(frage["correct_answer"])
         for btn, answer in zip(self.answer_buttons, answers):
             if answer == correct:
                 btn.config(bg="green")
             else:
-                btn.config(bg="SystemButtonFace")  # Standardfarbe
+                btn.config(bg="SystemButtonFace")
 
     def show_new_question(self, fragen):
         # Ersetze aktuelle Frage(n) durch die neue(n)
@@ -103,18 +97,10 @@ class TriviaGame(tk.Frame):
                 self.score_listbox.insert(tk.END, f"{name} - Punkte: {score}")
     
     def update_scores_and_question(self, frage, scores):
-        # Setze alle Buttons zurück (Standardfarbe)
         for btn in self.answer_buttons:
             btn.config(bg="SystemButtonFace")
-
         self.question_label.config(text=html.unescape(frage["question"]))
-        # Antworten in Server-Reihenfolge übernehmen (wie in show_question)
-        if "all_answers" in frage:
-            answers = [html.unescape(a) for a in frage["all_answers"]]
-        else:
-            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-            answers = [html.unescape(a) for a in answers]
-            random.shuffle(answers)
+        answers = [html.unescape(a) for a in frage["all_answers"]]
         for btn, answer in zip(self.answer_buttons, answers):
             btn.config(text=answer)
             btn.config(command=lambda a=answer: self.on_answer(a))
@@ -135,28 +121,16 @@ class TriviaGame(tk.Frame):
             button.grid()  # Buttons wieder sichtbar machen
 
     def show_question(self, index):
-        # Setze alle Buttons zurück (Standardfarbe)
         for btn in self.answer_buttons:
-            btn.config(bg="SystemButtonFace")  # oder "lightgray" je nach OS
-
+            btn.config(bg="SystemButtonFace")
         frage = self.fragen[index]
         self.question_label.config(text=html.unescape(frage["question"]))
         self.difficulty_label = tk.Label(self, text=frage["difficulty"], font=("Arial", 12))
-
-        # Antworten in Server-Reihenfolge übernehmen (bei Server-GUI ggf. selbst bauen)
-        if "all_answers" in frage:
-            answers = [html.unescape(a) for a in frage["all_answers"]]
-        else:
-            # Nur auf dem Server: Antworten zusammenbauen und mischen
-            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-            answers = [html.unescape(a) for a in answers]
-            random.shuffle(answers)
-
+        answers = [html.unescape(a) for a in frage["all_answers"]]
         for btn, answer in zip(self.answer_buttons, answers):
             btn.config(text=answer, bg="SystemButtonFace")
             btn.config(command=lambda a=answer: self.on_answer(a))
             btn.grid_remove()
-
         self.show_answers(1000)
     
     def on_answer(self, answer):

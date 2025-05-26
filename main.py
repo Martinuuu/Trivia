@@ -10,6 +10,7 @@ from GUI.clientwait import TriviaClientWait
 from GUI.game import TriviaGame
 
 import random
+import time
 
 # Hauptklasse der Anwendung, die von tk.Tk erbt (dem Hauptfenster)
 class App(tk.Tk):
@@ -66,22 +67,31 @@ class App(tk.Tk):
                     random.shuffle(answers)
                     frage["all_answers"] = answers
 
-
-
-        self.switch_frame(TriviaGame, fragen, rolle, server_address)
-    
         if rolle == "server":
             if hasattr(old_frame, "game_server"):
                 def gui_update_callback(command, *args):
                     if command == "UPDATE_GUI":
                         frage, scores = args
-                        # 1. Zeige die richtige Antwort grün an
+                        # 1. Zeige die richtige Antwort der aktuellen Frage grün an
                         self.current_frame.highlight_correct_answer(frage)
-                        # 2. Warte z.B. 1 Sekunde, dann zeige die nächste Frage
-                        self.current_frame.after(1000, lambda: self.current_frame.update_scores_and_question(frage, scores))
+                        # 2. Nach 1 Sekunde: Setze Buttons zurück und zeige die nächste Frage
+                        def reset_and_show_next():
+                            # Setze Buttons zurück
+                            for btn in self.current_frame.answer_buttons:
+                                btn.config(bg="SystemButtonFace")
+                            # Erhöhe den Frage-Index
+                            self.current_frame.frage_index += 1
+                            if self.current_frame.frage_index < len(self.current_frame.fragen):
+                                next_frage = self.current_frame.fragen[self.current_frame.frage_index]
+                                self.current_frame.update_scores_and_question(next_frage, scores)
+                        self.current_frame.after(1000, reset_and_show_next)
                 old_frame.game_server.client_callback = gui_update_callback
                 self.current_frame.game_server = old_frame.game_server
 
+
+        self.switch_frame(TriviaGame, fragen, rolle, server_address)
+    
+        
 # Startpunkt der Anwendung
 if __name__ == "__main__":
     app = App()  # Erzeugt eine Instanz der App

@@ -158,6 +158,10 @@ class Server():
         
         self.is_game_start = True
         fragen = self.api.get_trivia(self.game_category_id, amount=20)
+        for frage in fragen:
+            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+            random.shuffle(answers)
+            frage["all_answers"] = answers
         self.fragen = fragen
 
         # Sende START_GAME an alle Clients
@@ -202,16 +206,11 @@ class Server():
             sock.sendto("NOTIFY_NEWPLAYER".encode(), client)
     
     def send_questions(self):
-        # Sende nur die aktuelle Frage!
         frage = self.fragen[self.current_question_index]
-        # Antworten mischen und richtige Antwort nicht markieren!
-        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-        random.shuffle(answers)
         frage_to_send = {
             "question": frage["question"],
             "difficulty": frage["difficulty"],
-            "all_answers": answers
-            # KEIN "correct_answer" mitsenden!
+            "all_answers": frage["all_answers"]
         }
         fragen_json = json.dumps([frage_to_send])
         for client in self.clients:
@@ -221,8 +220,12 @@ class Server():
     def send_next_question(self):
         # Hole ggf. neue Fragen nach
         if len(self.fragen) - self.current_question_index < 10:
-            neue_fragen = self.api.get_trivia(self.game_category, amount=10)
+            neue_fragen = self.api.get_trivia(self.game_category_id, amount=10)
             if neue_fragen:
+                for frage in neue_fragen:
+                    answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+                    random.shuffle(answers)
+                    frage["all_answers"] = answers
                 self.fragen.extend(neue_fragen)
             else:
                 print("Keine neuen Fragen von der API erhalten.")
@@ -233,13 +236,10 @@ class Server():
             return
 
         frage = self.fragen[self.current_question_index]
-        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-        random.shuffle(answers)
         frage_to_send = {
             "question": frage["question"],
             "difficulty": frage["difficulty"],
-            "all_answers": answers
-            # KEIN "correct_answer" mitsenden!
+            "all_answers": frage["all_answers"]
         }
         fragen_json = json.dumps([frage_to_send])
         for client in self.clients:
