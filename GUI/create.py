@@ -44,8 +44,8 @@ class TriviaServerCreate(tk.Frame):
             return
         game_name = self.name_entry.get()
         game_category_name = self.options.get()
-        game_category_id = self.categories_dict[game_category_name]  # <-- Hole die ID!
-        self.parent.show_serverwait(game_name, game_category_id)  # <-- Übergebe die ID!
+        game_category_id = self.categories_dict[game_category_name]
+        self.parent.show_serverwait(game_name, game_category_name, game_category_id)  # Name UND ID!
 
     def load_categories(self):
         categories = get_categories()

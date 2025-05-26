@@ -6,11 +6,12 @@ import time
 import random
 
 class Server():
-    def __init__(self, game_name, game_category, client_callback):
+    def __init__(self, game_name, game_category_id,game_category_name ,client_callback):
         self.port = 7870  # Port, auf dem der Server lauscht
         self.clients = []  # Liste der verbundenen Clients (IP, Port)
         self.game_name = game_name  # Name des Spiels
-        self.game_category = game_category  # Kategorie des Spiels (z. B. "Strategie")
+        self.game_category_id = game_category_id  # Kategorie des Spiels (z. B. "Strategie")
+        self.game_category_name = game_category_name
         self.stop_event = threading.Event()  # Event-Objekt zum Stoppen der while-Schleife
         self.client_callback = client_callback  # Callback-Funktion, wenn ein Client sich verbindet oder verlässt
         self.client_names = {}  # addr -> Name des Clients (z. B. "Max Mustermann")
@@ -43,7 +44,7 @@ class Server():
                     if addr in self.clients:
                         self.remove_player(addr)
                     
-                    sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category}".encode(), addr)
+                    sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category_name}".encode(), addr)
 
                 elif data.decode().startswith("CONNECT_GAME;"):
                     name = data.decode().split(";", 1)[1]
@@ -151,7 +152,7 @@ class Server():
 
 
     def startGame(self):
-        fragen = self.api.get_trivia(self.game_category, amount=20)
+        fragen = self.api.get_trivia(self.game_category_id, amount=20)
         self.fragen = fragen
 
         # Sende START_GAME an alle Clients
