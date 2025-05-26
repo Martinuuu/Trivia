@@ -68,7 +68,7 @@ class Server():
                         for client in self.clients:
                             # Sende Name statt IP!
                             name = self.client_names.get(client, client[0])
-                            sock.sendto(f"NAME;{name}".encode(), addr)
+                            sock.sendto(f"{name}".encode(), addr)
                             print(f"Sende Client: {name} an {addr}")
                         sock.sendto("END_RETRIEVE_PLAYERS".encode(), addr)  # Ende signalisieren
                         print(f"Ende Retrieve von {addr}, sende END_RETRIEVE_PLAYERS")
