@@ -153,6 +153,9 @@ class Server():
 
 
     def startGame(self):
+        if len(self.clients) < 1:
+            return
+        
         self.is_game_start = True
         fragen = self.api.get_trivia(self.game_category_id, amount=20)
         self.fragen = fragen
