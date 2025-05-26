@@ -46,13 +46,17 @@ class TriviaClientBrowse(tk.Frame):
             if not name or name.strip() == "":
                 tk.messagebox.showerror("Fehler", "Du musst einen Namen eingeben!")
                 return
-
-            server_adress = self.server_listbox.get(self.server_listbox.curselection()[0]).split(":")[-1].strip()
-            print("Versuche zu verbinden mit:", server_adress)
-            result = connectToGame(server_adress, name)  # Name mitgeben!
+    
+            # Beispiel-Server-String: "MeinSpiel - Kategorie: 192.168.1.5"
+            server_entry = self.server_listbox.get(self.server_listbox.curselection()[0])
+            ip = server_entry.split(":")[-1].strip()
+            port = 7870  # Immer der gleiche Port
+            server_address = (ip, port)
+            print("Versuche zu verbinden mit:", server_address)
+            result = connectToGame(ip, name)  # connectToGame erwartet nur die IP
             print("connectToGame Ergebnis:", result)
             if result:
-                self.parent.show_clientwait(server_adress)
+                self.parent.show_clientwait(server_address)
             else:
                 tk.messagebox.showerror("Fehler", "Verbindung zum Server fehlgeschlagen!")
         except Exception as e:

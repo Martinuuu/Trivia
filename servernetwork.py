@@ -73,21 +73,21 @@ class Server():
                         print(f"Ende Retrieve von {addr}, sende END_RETRIEVE_PLAYERS")
                 
                 
-                elif data.decode().startswith("ANSWER;"):
-                    answer = data.decode().split(";", 1)[1]
-                    print(f"Antwort von {addr}: {answer}")
-                    self.current_answers[addr] = answer
+                # elif data.decode().startswith("ANSWER;"):
+                #     answer = data.decode().split(";", 1)[1]
+                #     print(f"Antwort von {addr}: {answer}")
+                #     self.current_answers[addr] = answer
 
-                    # Punkte initialisieren, falls noch nicht vorhanden
-                    if addr not in self.scores:
-                        self.scores[addr] = 0
+                #     # Punkte initialisieren, falls noch nicht vorhanden
+                #     if addr not in self.scores:
+                #         self.scores[addr] = 0
 
-                    # Wenn alle Clients geantwortet haben:
-                    if len(self.current_answers) == len(self.clients):
-                        self.evaluate_answers()
-                        self.current_answers = {}
-                        self.current_question_index += 1
-                        self.send_next_question()    
+                #     # Wenn alle Clients geantwortet haben:
+                #     if len(self.current_answers) == len(self.clients):
+                #         self.evaluate_answers()
+                #         self.current_answers = {}
+                #         self.current_question_index += 1
+                #         self.send_next_question()    
 
             except socket.timeout:
                 # Timeout nach 1 Sekunde – prüfen, ob Schleife gestoppt werden soll
@@ -129,30 +129,33 @@ class Server():
         fragen = self.api.get_trivia(self.game_category, amount=20)
         self.fragen = fragen
 
+        # Sende START_GAME an alle Clients
+        for client in self.clients:
+            self.sock.sendto("START_GAME".encode(), client)
+
         received_acks = []
-        def handle_client(client):
+        expected_acks = set(self.clients)
+        self.sock.settimeout(5)
+        start_time = time.time()
+        while expected_acks and (time.time() - start_time < 5):
             try:
-                self.sock.sendto("START_GAME".encode(), client)
-                self.sock.settimeout(5)
                 data, addr = self.sock.recvfrom(1024)
-                if data.decode() == "START_ACK":
+                print("Erwarte ACK von:", expected_acks)
+                print("Bekommen von:", addr)
+                if data.decode() == "START_ACK" and addr in expected_acks:
                     print(f"START_ACK von {addr} erhalten.")
                     received_acks.append(addr)
+                    expected_acks.remove(addr)
                 else:
                     print(f"Unerwartete Antwort von {addr}: {data.decode()}")
             except socket.timeout:
-                print(f"Timeout beim Warten auf START_ACK von {client}. \nLösche Client")
-                self.clients.remove(client)
-            except Exception as e:
-                print(f"Anderer Fehler im handle_client: {e}")
+                # Timeout, aber wir prüfen, ob noch ACKs fehlen
+                break
 
-        threads = []
-        for client in self.clients:
-            t = threading.Thread(target=handle_client, args=(client,))
-            t.start()
-            threads.append(t)
-        for t in threads:
-            t.join()  # Warten, bis alle Threads fertig sind
+        # Entferne Clients, die kein ACK geschickt haben
+        for client in list(expected_acks):
+            print(f"Kein START_ACK von {client}. Entferne Client.")
+            self.clients.remove(client)
 
         # Jetzt sind alle ACKs da, jetzt Fragen senden!
         self.send_questions()

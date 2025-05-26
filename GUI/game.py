@@ -11,6 +11,7 @@ class TriviaGame(tk.Frame):
         self.frage_index = 0
         self.rolle = rolle  # Rolle des Spielers (client/server)
         self.server_address = server_address
+        self.after_id = None  # Für den Timer
         print("TriviaGame Rolle:", self.rolle)
 
         # Question label at the top
@@ -68,8 +69,8 @@ class TriviaGame(tk.Frame):
         self.timer_label.config(text=f"Zeit: {seconds} Sekunden")
 
     def show_answers(self, delay):
-        self.after(delay, self.show_answer_buttons)
-
+        # self.after(delay, self.show_answer_buttons)
+        self.after_id = self.after(delay, self.show_answer_buttons)
     def show_answer_buttons(self):
         for button in self.answer_buttons:
             button.grid()  # Buttons wieder sichtbar machen
@@ -100,3 +101,13 @@ class TriviaGame(tk.Frame):
             send_answer(self.server_address, answer)
             print(f"Antwort gesendet: {answer}")
 
+    def destroy(self):
+        # Timer abbrechen, falls noch aktiv
+        if self.after_id is not None:
+            try:
+                if self.winfo_exists():
+                    self.after_cancel(self.after_id)
+            except Exception as e:
+                print("Fehler beim Abbrechen des Timers:", e)
+            self.after_id = None
+        super().destroy()

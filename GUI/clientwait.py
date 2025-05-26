@@ -17,6 +17,8 @@ class TriviaClientWait(tk.Frame):
 
         self.parent = parent
 
+        self.after_id = None  # ID für die wiederkehrende Abfrage
+
         # Setze Fenstergröße
         self.parent.geometry("550x300")
 
@@ -61,7 +63,7 @@ class TriviaClientWait(tk.Frame):
             self.server_listbox.insert(tk.END, f"Client: {client_address[0]}:{client_address[1]}")
     
     def show_game(self, fragen=None):
-        self.after(0, lambda: self.parent.show_game(fragen, "client"))  # Zeigt das Spiel an, wenn die Fragen empfangen wurden
+        self.after_id = self.after(0, lambda: self.parent.show_game(fragen, "client"))
 
     # Funktion, die im Thread läuft: Spieler abrufen und auf neue Spieler warten
 
@@ -72,6 +74,14 @@ class TriviaClientWait(tk.Frame):
         self.parent.show_serverbrowse()  # Geht zurück zum Spiel-Erstellungs-Bildschirm
 
     def destroy(self):
-        # Wird aufgerufen, wenn das Frame zerstört wird
         self.stop_event.set()
+        if hasattr(self, "listener_thread") and self.listener_thread.is_alive():
+            self.listener_thread.join(timeout=1)
+        if hasattr(self, "after_id") and self.after_id is not None:
+            try:
+                if self.winfo_exists():
+                    self.after_cancel(self.after_id)
+            except Exception as e:
+                print("Error cancelling after_id: ", e)
+            self.after_id = None
         super().destroy()

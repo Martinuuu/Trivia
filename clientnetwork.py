@@ -36,7 +36,7 @@ def checkServer():
 def connectToGame(address, name):
     # Sende Name mit
     msg = f"CONNECT_GAME;{name}"
-    sock.sendto(msg.encode(), (address, server_port))
+    sock.sendto(msg.encode(), (address, server_port) if isinstance(address, str) else address)
 
     data, addr = sock.recvfrom(1024)
     if data.decode() == "CONNECT_ACK":
@@ -44,17 +44,14 @@ def connectToGame(address, name):
         return True
 
 def leaveGame(address):
-    # sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
-    sock.sendto("LEAVE_GAME".encode(),(address,server_port))
-
+    sock.sendto("LEAVE_GAME".encode(), (address, server_port) if isinstance(address, str) else address)
     data, addr = sock.recvfrom(1024)
     if data.decode() == "LEAVE_ACK":
         print("Client hat das Spiel verlassen")
 
 def retrievePlayers(address):
-    # sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM) 
     try:    
-        sock.sendto("RETRIEVE_PLAYERS".encode(),(address,server_port))
+        sock.sendto("RETRIEVE_PLAYERS".encode(), (address, server_port) if isinstance(address, str) else address)
         print("Retrieve gesendet")
         data, addr = sock.recvfrom(1024)
         if data.decode() == "START_GAME":
@@ -63,7 +60,7 @@ def retrievePlayers(address):
         if data.decode() == "RETRIEVE_ACK":
             print("Retrieve Ack bekommen")
             clients = []
-            sock.sendto("START_RETRIEVE_PLAYERS".encode(),(address,server_port))
+            sock.sendto("START_RETRIEVE_PLAYERS".encode(), (address, server_port) if isinstance(address, str) else address)
             data = "".encode()
             while "END_RETRIEVE_PLAYERS" not in data.decode():
                 data, addr = sock.recvfrom(1024)
@@ -89,10 +86,7 @@ def listenServer(server_address, gui_callback, server_listbox, stop_event=None):
             msg = data.decode()
             if msg == "START_GAME":
                 print("START_GAME empfangen, sende START_ACK an", server_address)
-                # start = True
-                sock.sendto("START_ACK".encode(), (server_address, 7870))
-                # gui_callback()
-                # self.after(0, lambda: self.parent.show_game([]))
+                sock.sendto("START_ACK".encode(), server_address)
             if msg == "NOTIFY_NEWPLAYER":
                 clients = retrievePlayers(server_address)
                 if server_listbox.winfo_exists():
@@ -112,4 +106,4 @@ def listenServer(server_address, gui_callback, server_listbox, stop_event=None):
 
 def send_answer(server_address, answer):
     msg = f"ANSWER;{answer}"
-    sock.sendto(msg.encode(), (server_address, server_port))
+    sock.sendto(msg.encode(), server_address)
