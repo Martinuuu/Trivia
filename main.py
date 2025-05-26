@@ -9,6 +9,8 @@ from GUI.serverwait import TriviaServerWait
 from GUI.clientwait import TriviaClientWait
 from GUI.game import TriviaGame
 
+import random
+
 # Hauptklasse der Anwendung, die von tk.Tk erbt (dem Hauptfenster)
 class App(tk.Tk):
     def __init__(self):
@@ -57,6 +59,15 @@ class App(tk.Tk):
             if hasattr(self.current_frame, "server_address"):
                 server_address = self.current_frame.server_address
     
+        if fragen:
+            for frage in fragen:
+                if "all_answers" not in frage:
+                    answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+                    random.shuffle(answers)
+                    frage["all_answers"] = answers
+
+
+
         self.switch_frame(TriviaGame, fragen, rolle, server_address)
     
         if rolle == "server":

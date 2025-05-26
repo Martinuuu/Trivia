@@ -108,7 +108,7 @@ class TriviaGame(tk.Frame):
             btn.config(bg="SystemButtonFace")
 
         self.question_label.config(text=html.unescape(frage["question"]))
-        # Antworten in Server-Reihenfolge übernehmen
+        # Antworten in Server-Reihenfolge übernehmen (wie in show_question)
         if "all_answers" in frage:
             answers = [html.unescape(a) for a in frage["all_answers"]]
         else:
@@ -120,8 +120,6 @@ class TriviaGame(tk.Frame):
             btn.config(command=lambda a=answer: self.on_answer(a))
         self.update_scores(scores)
 
-    def update_timer(self, seconds):
-        self.timer_label.config(text=f"Zeit: {seconds} Sekunden")
 
     def show_answers(self, delay):
         # self.after(delay, self.show_answer_buttons)
@@ -145,10 +143,11 @@ class TriviaGame(tk.Frame):
         self.question_label.config(text=html.unescape(frage["question"]))
         self.difficulty_label = tk.Label(self, text=frage["difficulty"], font=("Arial", 12))
 
-        # Antworten in Server-Reihenfolge übernehmen
+        # Antworten in Server-Reihenfolge übernehmen (bei Server-GUI ggf. selbst bauen)
         if "all_answers" in frage:
             answers = [html.unescape(a) for a in frage["all_answers"]]
         else:
+            # Nur auf dem Server: Antworten zusammenbauen und mischen
             answers = frage["incorrect_answers"] + [frage["correct_answer"]]
             answers = [html.unescape(a) for a in answers]
             random.shuffle(answers)
