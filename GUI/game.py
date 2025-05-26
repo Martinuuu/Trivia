@@ -103,6 +103,10 @@ class TriviaGame(tk.Frame):
                 self.score_listbox.insert(tk.END, f"{name} - Punkte: {score}")
     
     def update_scores_and_question(self, frage, scores):
+        # Setze alle Buttons zurück (Standardfarbe)
+        for btn in self.answer_buttons:
+            btn.config(bg="SystemButtonFace")
+
         self.question_label.config(text=html.unescape(frage["question"]))
         # Antworten in Server-Reihenfolge übernehmen
         if "all_answers" in frage:
@@ -133,6 +137,10 @@ class TriviaGame(tk.Frame):
             button.grid()  # Buttons wieder sichtbar machen
 
     def show_question(self, index):
+        # Setze alle Buttons zurück (Standardfarbe)
+        for btn in self.answer_buttons:
+            btn.config(bg="SystemButtonFace")  # oder "lightgray" je nach OS
+
         frage = self.fragen[index]
         self.question_label.config(text=html.unescape(frage["question"]))
         self.difficulty_label = tk.Label(self, text=frage["difficulty"], font=("Arial", 12))

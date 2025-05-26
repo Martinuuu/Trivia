@@ -196,24 +196,30 @@ class Server():
             sock.sendto("NOTIFY_NEWPLAYER".encode(), client)
     
     def send_questions(self):
-        for frage in self.fragen:
-            answers = frage["incorrect_answers"] + [frage["correct_answer"]]
-            random.shuffle(answers)
-            frage["all_answers"] = answers  # Neue Reihenfolge speichern
-        fragen_json = json.dumps(self.fragen)
+        # Sende nur die aktuelle Frage!
+        frage = self.fragen[self.current_question_index]
+        # Antworten mischen und richtige Antwort nicht markieren!
+        answers = frage["incorrect_answers"] + [frage["correct_answer"]]
+        random.shuffle(answers)
+        frage_to_send = {
+            "question": frage["question"],
+            "difficulty": frage["difficulty"],
+            "all_answers": answers
+            # KEIN "correct_answer" mitsenden!
+        }
+        fragen_json = json.dumps([frage_to_send])
         for client in self.clients:
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
 
 
     def send_next_question(self):
-        # Wenn weniger als 10 Fragen übrig sind, hole 10 neue dazu
+        # Hole ggf. neue Fragen nach
         if len(self.fragen) - self.current_question_index < 10:
             neue_fragen = self.api.get_trivia(self.game_category, amount=10)
             if neue_fragen:
                 self.fragen.extend(neue_fragen)
             else:
                 print("Keine neuen Fragen von der API erhalten.")
-                # Optional: Spiel beenden oder Info an die Clients schicken
 
         # Prüfe, ob noch Fragen vorhanden sind
         if self.current_question_index >= len(self.fragen):
@@ -223,16 +229,12 @@ class Server():
         frage = self.fragen[self.current_question_index]
         answers = frage["incorrect_answers"] + [frage["correct_answer"]]
         random.shuffle(answers)
-        frage["all_answers"] = answers
-        fragen_json = json.dumps([frage])
+        frage_to_send = {
+            "question": frage["question"],
+            "difficulty": frage["difficulty"],
+            "all_answers": answers
+            # KEIN "correct_answer" mitsenden!
+        }
+        fragen_json = json.dumps([frage_to_send])
         for client in self.clients:
             self.sock.sendto(f"QUESTIONS;{fragen_json}".encode(), client)
-
-        # Jetzt das GUI-Update für die neue Frage und Scores!
-        # if hasattr(self.client_callback, "__call__"):
-        #     # Erzeuge ein dict: name -> score
-        #     name_scores = {}
-        #     for addr, score in self.scores.items():
-        #         name = self.client_names.get(addr, f"{addr[0]}:{addr[1]}")
-        #         name_scores[name] = score
-        #     self.client_callback("UPDATE_GUI", frage, name_scores)
