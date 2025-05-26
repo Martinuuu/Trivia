@@ -61,13 +61,19 @@ def retrievePlayers(address):
             print("Retrieve Ack bekommen")
             clients = []
             sock.sendto("START_RETRIEVE_PLAYERS".encode(), (address, server_port) if isinstance(address, str) else address)
-            data = "".encode()
-            while "END_RETRIEVE_PLAYERS" not in data.decode():
-                data, addr = sock.recvfrom(1024)
-                clients.append(data.decode())
-                print(f"Client: {data.decode()} von {addr}")
+            sock.settimeout(5)  # Timeout erhöhen!
+            while True:
+                try:
+                    data, addr = sock.recvfrom(1024)
+                    msg = data.decode()
+                    if "END_RETRIEVE_PLAYERS" in msg:
+                        break
+                    clients.append(msg)
+                    print(f"Client: {msg} von {addr}")
+                except socket.timeout:
+                    print("Timeout beim Empfangen der Clients.")
+                    break
             print("Retrieve abgeschlossen")
-            clients.pop(-1) # Löscht den letzten Eintrag (END_RETRIEVE_PLAYERS)
             return clients
         else:
             return []
