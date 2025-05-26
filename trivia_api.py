@@ -33,14 +33,17 @@ class Api():
     
         return token
     
-    def get_trivia(self, category: int):
+    def get_trivia(self, category: int, amount: int):
+        url = f"https://opentdb.com/api.php?amount={amount}&type=multiple"
+        if category and int(category) != 0:
+            url += f"&category={category}"
+        url += f"&token={self.session_token}"
+        response = requests.get(url)
         questions = []
-        response = requests.get(f"https://opentdb.com/api.php?amount=5&type=multiple&category={category}&token={self.session_token}")
         if response.status_code == 200:
             data = json.loads(response.content)
             results = data["results"]
             return results
         else:
             print(f"Fehler beim Abrufen der Fragen: {response.status_code}")
-    
         return questions
