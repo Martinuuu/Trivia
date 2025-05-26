@@ -67,6 +67,9 @@ class TriviaGame(tk.Frame):
             try:
                 data, addr = sock.recvfrom(65536)
                 msg = data.decode()
+                if msg == "GAME_OVER":
+                    self.after(0, self.show_game_over)
+                    break
                 if msg.startswith("QUESTIONS;"):
                     fragen_json = msg[len("QUESTIONS;"):]
                     fragen = json.loads(fragen_json)
@@ -78,6 +81,11 @@ class TriviaGame(tk.Frame):
             except Exception:
                 continue
 
+    def show_game_over(self):
+        for btn in self.answer_buttons:
+            btn.config(state=tk.DISABLED)
+        self.question_label.config(text="Spiel beendet! Danke fürs Mitspielen.")
+        # Optional: Scores anzeigen oder ein "Zurück zum Start"-Button
 
     def highlight_correct_answer(self, frage):
         # Finde die richtige Antwort

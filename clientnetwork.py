@@ -90,6 +90,10 @@ def listenServer(server_address, gui_callback, server_listbox, stop_event=None):
         try:
             data, addr = sock.recvfrom(65536)
             msg = data.decode()
+            if msg == "GAME_OVER":
+                print("Spiel ist vorbei!")
+                gui_callback("GAME_OVER")  # Übergib das an die GUI
+                break
             if msg == "START_GAME":
                 print("START_GAME empfangen, sende START_ACK an", server_address)
                 sock.sendto("START_ACK".encode(), server_address)
