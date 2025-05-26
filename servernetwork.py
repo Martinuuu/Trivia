@@ -218,6 +218,13 @@ class Server():
 
 
     def send_next_question(self):
+        # Prüfe, ob das Spiel nach 5 Fragen beendet werden soll
+        if self.current_question_index >= 5:
+            print("Spiel ist vorbei, sende GAME_OVER an alle Clients.")
+            for client in self.clients:
+                self.sock.sendto("GAME_OVER".encode(), client)
+            return
+
         # Hole ggf. neue Fragen nach
         if len(self.fragen) - self.current_question_index < 10:
             neue_fragen = self.api.get_trivia(self.game_category_id, amount=10)
@@ -239,7 +246,7 @@ class Server():
         frage_to_send = {
             "question": frage["question"],
             "difficulty": frage["difficulty"],
-            "all_answers": frage["all_answers"]
+            "all_answers": answers
         }
         fragen_json = json.dumps([frage_to_send])
         for client in self.clients:

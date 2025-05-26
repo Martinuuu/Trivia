@@ -8,6 +8,10 @@ class TriviaGame(tk.Frame):
     def __init__(self, parent, fragen=None, rolle=None, server_address=None):
         super().__init__(parent)
         self.parent = parent
+        if rolle == "server":
+            self.parent.geometry("800x850")
+        else:
+            self.parent.geometry("800x600")
         self.fragen = fragen or []
         self.frage_index = 0
         self.rolle = rolle  # Rolle des Spielers (client/server)
@@ -63,6 +67,9 @@ class TriviaGame(tk.Frame):
             try:
                 data, addr = sock.recvfrom(65536)
                 msg = data.decode()
+                if msg == "GAME_OVER":
+                    self.after(0, self.show_game_over)
+                    break
                 if msg.startswith("QUESTIONS;"):
                     fragen_json = msg[len("QUESTIONS;"):]
                     fragen = json.loads(fragen_json)
@@ -74,6 +81,11 @@ class TriviaGame(tk.Frame):
             except Exception:
                 continue
 
+    def show_game_over(self):
+        for btn in self.answer_buttons:
+            btn.config(state=tk.DISABLED)
+        self.question_label.config(text="Spiel beendet! Danke fürs Mitspielen.")
+        # Optional: Scores anzeigen oder ein "Zurück zum Start"-Button
 
     def highlight_correct_answer(self, frage):
         answers = [html.unescape(a) for a in frage["all_answers"]]
