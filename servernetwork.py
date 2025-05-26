@@ -17,6 +17,7 @@ class Server():
         self.client_names = {}  # addr -> Name des Clients (z. B. "Max Mustermann")
         self.api = Api()  # Instanz der API-Klasse erstellen (z. B. für Fragen)
 
+        self.is_game_start = False
         self.current_answers = {}  # addr -> Antwort
         self.scores = {}           # addr -> Punkte
         self.current_question_index = 0
@@ -38,13 +39,13 @@ class Server():
             try:
                 data, addr = sock.recvfrom(1024)  # Empfang von bis zu 1024 Bytes
                 if data.decode() == "DISCOVER_GAME":                   
-                    # Wenn ein Client das Spiel im Netzwerk sucht     
-                    print(f"Anfrage von {addr}, sende Antwort...")
-                    
-                    if addr in self.clients:
-                        self.remove_player(addr)
-                    
-                    sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category_name}".encode(), addr)
+                    if self.is_game_start is False:
+                        # Wenn ein Client das Spiel im Netzwerk sucht     
+                        print(f"Anfrage von {addr}, sende Antwort...") 
+                        if addr in self.clients:
+                            self.remove_player(addr)
+
+                        sock.sendto(f"DISCOVER_ACK;{self.game_name};{self.game_category_name}".encode(), addr)
 
                 elif data.decode().startswith("CONNECT_GAME;"):
                     name = data.decode().split(";", 1)[1]
@@ -152,6 +153,10 @@ class Server():
 
 
     def startGame(self):
+        if len(self.clients) < 1:
+            return
+        
+        self.is_game_start = True
         fragen = self.api.get_trivia(self.game_category_id, amount=20)
         self.fragen = fragen
 
