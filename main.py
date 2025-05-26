@@ -42,8 +42,8 @@ class App(tk.Tk):
         self.switch_frame(TriviaServerCreate)
 
     # Zeigt den "Warten auf Spieler"-Bildschirm des Servers an
-    def show_serverwait(self, game_name, game_category):
-        self.switch_frame(TriviaServerWait, game_name, game_category)
+    def show_serverwait(self, game_name, game_category_name, game_category_id):
+        self.switch_frame(TriviaServerWait, game_name, game_category_name, game_category_id)
 
     # Zeigt den "Warten auf Spielstart"-Bildschirm für den Client an
     def show_clientwait(self, server_address):

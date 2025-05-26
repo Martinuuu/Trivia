@@ -7,17 +7,15 @@ from servernetwork import Server
 
 # Klasse für den "Warten auf Spieler"-Bildschirm des Servers
 class TriviaServerWait(tk.Frame):
-    def __init__(self, parent, game_name, game_category):
-        super().__init__(parent)    
+    def __init__(self, parent, game_name, game_category_name, game_category_id):
+        super().__init__(parent)
         self.parent = parent
 
-        # Setze die Fenstergröße
         self.parent.geometry("550x300")
-        # Setze den Fenstertitel auf "Spielname - Kategorie"
-        parent.title(f"{game_name} - {game_category}")
+        parent.title(f"{game_name} - {game_category_name}") 
 
         # Erzeuge den Spielserver mit Callback-Funktion für Client-Aktionen
-        self.game_server = Server(game_name, game_category, client_callback=self.callback_handler)
+        self.game_server = Server(game_name, game_category_id, game_category_name, client_callback=self.callback_handler)
 
         # Zurück-Button oben links
         back = tk.Button(self, text="←", command=self.back, width=2, height=1, font=("Arial", 10))
